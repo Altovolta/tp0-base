@@ -36,12 +36,8 @@ def add_network_compose(compose_config):
                     }
     
     compose_config['networks'] = network_compose
-    
-def main():
-    argv = sys.argv
-    file_name = argv[1]
-    number_of_clients = int(argv[2])
 
+def generate_compose(file_name, number_of_clients):
     compose_config = {'name': 'tp0', "services": {}}
 
     add_server_compose(compose_config)
@@ -54,5 +50,21 @@ def main():
     with open(file_name, 'w') as file:
         yaml.dump(compose_config, file, sort_keys=False)
 
+
+def main():
+    argv = sys.argv
+
+    if len(argv) != 3:
+        print(f"Invalid number of arguments. usage: ./generar_compose <filename> <n_clients>")
+        exit()
+        
+    number_of_clients = argv[2]
+    if not number_of_clients.isdigit():
+        print("Number of clients must be an integer")
+        exit()
+
+    file_name = argv[1]
+    
+    generate_compose(file_name, int(number_of_clients))
 
 main()

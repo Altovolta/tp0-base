@@ -178,3 +178,23 @@ Cada ejercicio deberá resolverse en una rama independiente con nombres siguiend
 Puden obtener un listado del último commit de cada rama ejecutando `git ls-remote`.
 
 Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+
+## Ejecución del ejercicio
+
+### Ejercicio 3
+Para poder ejecutar el script que va a validar el funcionamiento del echo server, primero debe levantarse el servidor y la network usando
+
+```bash
+make docker-compose-up
+```
+
+Una vez levantado el servidor, se ejecuta el script de la siguiente manera:
+
+```bash
+./validar-echo-server.sh 
+```
+
+Este script lo que hace es crear una imagen con el Dockerfile que se encuentra en la carpeta server_test, para luego crear un contenedor en donde ejecute la prueba utilizando esa imagen.
+
+Una vez se realizó la prueba, se elimina el contenedor usado

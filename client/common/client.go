@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"os/signal"
+	"os"
+	"syscall"
 
 	"github.com/op/go-logging"
 )
@@ -54,8 +57,19 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
+
+	sig_channel := make(chan os.Signal, 1)
+	signal.Notify(sig_channel, syscall.SIGTERM)
+
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
+
+		select {
+		case sig := <-sig_channel:
+			log.Debugf("signal received | signal: %s", sig)
+			return
+		default:
+		}
 		c.createClientSocket()
 
 		// TODO: Modify the send to avoid short-write

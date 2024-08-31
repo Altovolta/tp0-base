@@ -44,8 +44,7 @@ class Server:
             # TODO: Modify the receive to avoid short-reads
             msg = client_sock.recv(61).rstrip().decode('utf-8') #1024
 
-
-            bet = self.parse_bet(msg)
+            bet = self.process_message(msg)
 
             utils.store_bets([bet]) # ver de imprimir y guardar las cosas
 
@@ -84,7 +83,7 @@ class Server:
         self._server_socket.close()
         self._got_close_signal = True
 
-    def parse_bet(self, msg):
+    def process_message(self, msg):
         id_agencia = msg[0]
         name_len = int(msg[1:3])
         name = msg[3:3 + name_len]
@@ -94,9 +93,8 @@ class Server:
         fecha_nac = msg[46:56]
         numero = msg[56:]
 
-        logging.debug(f"id: {id_agencia} | n_len: {name_len} | name: {name} | a_len: {apellido_len} | apell: {apellido} | dni: {dni} | nac: {fecha_nac} | num: {numero}")
+        #logging.debug(f"id: {id_agencia} | n_len: {name_len} | name: {name} | a_len: {apellido_len} | apell: {apellido} | dni: {dni} | nac: {fecha_nac} | num: {numero}")
 
         return utils.Bet(id_agencia, name, apellido, dni, fecha_nac, numero)
 
-        
 

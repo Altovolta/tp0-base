@@ -29,22 +29,24 @@ func NewBet() *Bet {
 }
 
 func (bet *Bet) ParseBet() string {
-	mensaje := fmt.Sprintf("%02d%-23s%02d%-10s%08d%s%02d",
-		len(bet.NOMBRE), bet.NOMBRE, len(bet.APELLIDO), bet.APELLIDO,
+	client_id := os.Getenv("CLI_ID")
+	mensaje := fmt.Sprintf("%s%02d%-23s%02d%-10s%08d%s%02d",
+		client_id, len(bet.NOMBRE), bet.NOMBRE, len(bet.APELLIDO), bet.APELLIDO,
 		bet.DOCUMENTO, bet.NACIMIENTO, bet.NUMERO,
 	)
 	return mensaje
 
 }
 
-func (c *Client) SendBet(bet *Bet) int {
+func SendBet(c *Client, bet *Bet) int {
 
 	mensaje := bet.ParseBet()
-	bytes_to_send := len(mensaje) + 1
+	bytes_to_send := len(mensaje)
+	bytes_sent := 0
 
-	for bytes_to_send != 0 {
+	for bytes_to_send > bytes_sent {
 
-		n, err := fmt.Fprintf(c.conn, "%s%s", c.config.ID, mensaje)
+		n, err := c.conn.Write([]byte(mensaje[bytes_sent:]))
 		//ver de usar Write de enconding/binary -> asi lo paso a BigEndian
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
@@ -53,9 +55,7 @@ func (c *Client) SendBet(bet *Bet) int {
 			)
 			return -1
 		}
-
-		bytes_to_send -= n
-		mensaje = mensaje[n-1:]
+		bytes_sent += n
 	}
 	return 0
 }

@@ -72,14 +72,14 @@ func (c *Client) StartClientLoop() {
 	c.createClientSocket()
 
 	bet := NewBet()
-	i := c.SendBet(bet)
+	status := SendBet(c, bet)
 
-	if i != 0 {
+	if status != 0 {
 		log.Errorf("Fallo al enviar mensaje", c.config.ID)
 		c.conn.Close()
 		return
 	}
-	msg, err := bufio.NewReader(c.conn).ReadString('\n')
+	_, err := bufio.NewReader(c.conn).ReadString('\n')
 
 	c.conn.Close()
 
@@ -91,11 +91,7 @@ func (c *Client) StartClientLoop() {
 		return
 	}
 
-	//log.Infof("action: apuesta_enviada | result: success | dni: %s | numero: %s")
-	log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-		c.config.ID,
-		msg,
-	)
+	log.Infof("action: apuesta_enviada | result: success | dni: %d | numero: %d", bet.DOCUMENTO, bet.NUMERO)
 
 	// Wait a time between sending one message and the next one
 	time.Sleep(c.config.LoopPeriod)

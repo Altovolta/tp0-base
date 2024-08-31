@@ -47,7 +47,6 @@ func SendBet(c *Client, bet *Bet) int {
 	for bytes_to_send > bytes_sent {
 
 		n, err := c.conn.Write([]byte(mensaje[bytes_sent:]))
-		//ver de usar Write de enconding/binary -> asi lo paso a BigEndian
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,

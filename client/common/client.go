@@ -75,7 +75,7 @@ func (c *Client) StartClientLoop() {
 	status := SendBet(c, bet)
 
 	if status != 0 {
-		log.Errorf("Fallo al enviar mensaje", c.config.ID)
+		log.Errorf("No se pudo enviar el mensaje", c.config.ID)
 		c.conn.Close()
 		return
 	}

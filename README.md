@@ -184,7 +184,9 @@ Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los cri
 
 El protocolo a usar es el siguiente:
 
-El cliente va a enviar el siguiente mensaje, de tamaño fijo (61 bytes), con los datos que requiere el servidor:
+El cliente va a enviar el siguiente mensaje, de tamaño fijo (60 bytes), con los datos que requiere el servidor:
 
 | nro_agencia | largo_nombre | nombre | largo_apellido | apellido | documento | fecha_nacimiento | numero |
 |      1B     |      2B      |   23B  |       2B       |    10B   |     8B    |       10B        |   4B   |
+
+El servidor va a responder con "OK\n" para confirmar que recivió el mensaje 

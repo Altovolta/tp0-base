@@ -41,17 +41,18 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(61).rstrip().decode('utf-8') #1024
+            msg = self.receive_message(client_sock)
+            if msg is None: #el cliente se desconecto
+                client_sock.close()
+                return 
 
             bet = self.process_message(msg)
-
-            utils.store_bets([bet]) # ver de imprimir y guardar las cosas
-
+            utils.store_bets([bet]) 
             logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
 
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+
             # TODO: Modify the send to avoid short-writes
             client_sock.send("{}\n".format(msg).encode('utf-8'))
         except OSError as e:
@@ -97,4 +98,18 @@ class Server:
 
         return utils.Bet(id_agencia, name, apellido, dni, fecha_nac, numero)
 
+    def receive_message(self, client_socket):
+        bytes_to_recv = 60
+        msg = ""
 
+        while bytes_to_recv > 0:
+
+            buf = client_socket.recv(bytes_to_recv).rstrip().decode('utf-8')
+
+            if len(buf) == 0: # client disconnected
+                return None
+
+            bytes_to_recv -= len(buf)
+            msg += buf
+        
+        return msg

@@ -2,7 +2,7 @@ import socket
 import logging
 
 import signal
-from . import utils
+from . import utils, comunication as com
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -41,7 +41,7 @@ class Server:
         client socket will also be closed
         """
         try:
-            msg = self.receive_message(client_sock)
+            msg = com.receive_message(client_sock)
             if msg is None: 
                 client_sock.close()
                 return 
@@ -53,7 +53,7 @@ class Server:
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
-            self.send_all(client_sock, "OK\n")
+            com.send_all(client_sock, "OK\n")
 
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
@@ -97,33 +97,3 @@ class Server:
         #logging.debug(f"id: {id_agencia} | n_len: {name_len} | name: {name} | a_len: {apellido_len} | apell: {apellido} | dni: {dni} | nac: {fecha_nac} | num: {numero}")
 
         return utils.Bet(id_agencia, name, apellido, dni, fecha_nac, numero)
-
-    def receive_message(self, client_socket):
-        bytes_to_recv = 60
-        msg = ""
-
-        while bytes_to_recv > 0:
-
-            buf = client_socket.recv(bytes_to_recv).rstrip().decode('utf-8')
-
-            if len(buf) == 0: # client disconnected
-                return None
-
-            bytes_to_recv -= len(buf)
-            msg += buf
-        
-        return msg
-
-    def send_all(self, socket, msg):
-    
-        bytes_to_send = len(msg)
-        bytes_sent = 0
-
-        while bytes_to_send > bytes_sent:
-            n = socket.send(msg[bytes_sent:].encode('utf-8'))
-            if n == 0: # client disconnected
-                return 0
-            bytes_sent += n
-
-        return bytes_sent
-    

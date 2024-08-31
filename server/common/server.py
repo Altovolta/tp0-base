@@ -2,6 +2,7 @@ import socket
 import logging
 
 import signal
+from . import utils
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -41,7 +42,15 @@ class Server:
         """
         try:
             # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
+            msg = client_sock.recv(61).rstrip().decode('utf-8') #1024
+
+
+            bet = self.parse_bet(msg)
+
+            utils.store_bets([bet]) # ver de imprimir y guardar las cosas
+
+            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes
@@ -74,4 +83,20 @@ class Server:
         logging.debug("Server socket closed")
         self._server_socket.close()
         self._got_close_signal = True
+
+    def parse_bet(self, msg):
+        id_agencia = msg[0]
+        name_len = int(msg[1:3])
+        name = msg[3:3 + name_len]
+        apellido_len = int(msg[26:28])
+        apellido = msg[28:28 + apellido_len]
+        dni = msg[38:46]
+        fecha_nac = msg[46:56]
+        numero = msg[56:]
+
+        logging.debug(f"id: {id_agencia} | n_len: {name_len} | name: {name} | a_len: {apellido_len} | apell: {apellido} | dni: {dni} | nac: {fecha_nac} | num: {numero}")
+
+        return utils.Bet(id_agencia, name, apellido, dni, fecha_nac, numero)
+
+        
 

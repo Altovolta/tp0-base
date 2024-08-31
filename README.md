@@ -178,3 +178,13 @@ Cada ejercicio deberá resolverse en una rama independiente con nombres siguiend
 Puden obtener un listado del último commit de cada rama ejecutando `git ls-remote`.
 
 Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+
+## Resolucion ej5
+
+El protocolo a usar es el siguiente:
+
+El cliente va a enviar el siguiente mensaje, de tamaño fijo (61 bytes), con los datos que requiere el servidor:
+
+| nro_agencia | largo_nombre | nombre | largo_apellido | apellido | documento | fecha_nacimiento | numero |
+|      1B     |      2B      |   23B  |       2B       |    10B   |     8B    |       10B        |   4B   |

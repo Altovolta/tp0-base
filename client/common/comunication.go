@@ -1,5 +1,13 @@
 package common
 
+func SendBets(c *Client, bets []Bet) {
+
+	for _, bet := range bets {
+		SendBet(c, &bet)
+	}
+
+}
+
 func SendBet(c *Client, bet *Bet) int {
 
 	mensaje := bet.ParseBet()

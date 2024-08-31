@@ -8,8 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	//"encoding/binary"
-
 	"github.com/op/go-logging"
 )
 
@@ -21,6 +19,7 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	BatchSize     int
 }
 
 // Client Entity that encapsulates how
@@ -60,38 +59,54 @@ func (c *Client) StartClientLoop() {
 	sig_channel := make(chan os.Signal, 1)
 	signal.Notify(sig_channel, syscall.SIGTERM)
 
-	select {
-	case sig := <-sig_channel:
-		log.Debugf("signal received | signal: %s", sig)
-		return
-	default:
-	}
+	file, erro := os.Open("agency.csv")
 
-	c.createClientSocket()
-
-	bet := NewBet()
-	status := SendBet(c, bet)
-
-	if status != 0 {
-		c.conn.Close()
+	if erro != nil {
+		log.Criticalf("hubo un error: %s", erro)
 		return
 	}
-	_, err := bufio.NewReader(c.conn).ReadString('\n')
 
+	c.createClientSocket() //chequeo de errores
+
+	fscanner := bufio.NewScanner(file)
+
+	for {
+
+		select {
+		case sig := <-sig_channel:
+			log.Debugf("signal received | signal: %s", sig)
+			file.Close()
+			c.conn.Close()
+			// agregar mensaje de cierre de archivo y socket
+			return
+		default:
+		}
+
+		bets := get_bet_batch(fscanner, c.config.BatchSize)
+		SendBets(c, bets)
+
+		if len(bets) < c.config.BatchSize {
+			break
+		}
+
+		// _, err := bufio.NewReader(c.conn).ReadString('\n')
+		// if err != nil {
+		// 	log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+		// 		c.config.ID,
+		// 		err,
+		// 	)
+		// 	break
+		// }
+
+		//log.Infof("action: apuesta_enviada | result: success | dni: %d | numero: %d", bet.DOCUMENTO, bet.NUMERO)
+
+		// Wait a time between sending one message and the next one
+		time.Sleep(c.config.LoopPeriod)
+
+	}
+
+	// terminé de enviar todo
+	file.Close()
 	c.conn.Close()
-
-	if err != nil {
-		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return
-	}
-
-	log.Infof("action: apuesta_enviada | result: success | dni: %d | numero: %d", bet.DOCUMENTO, bet.NUMERO)
-
-	// Wait a time between sending one message and the next one
-	time.Sleep(c.config.LoopPeriod)
-
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }

@@ -184,9 +184,19 @@ Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los cri
 
 El protocolo a usar es el siguiente:
 
-El cliente va a enviar el siguiente mensaje, de tamaño fijo (60 bytes), con los datos que requiere el servidor:
+Todos los mensajes del cliente van a tener el siguiente header:
+| tipo_mensaje |
+|      1B      |
+
+donde, tipo mensaje puede tomar los siguientes valores:
+
+- 0 -> el mensaje es una apuesta
+- 1 -> indica que se termino de enviar el batch
+- 2 -> indica que se enviaron todos los batch de la agencia
+
+El mensaje de apuesta tiene los sigueintes campos:
 
 | nro_agencia | largo_nombre | nombre | largo_apellido | apellido | documento | fecha_nacimiento | numero |
 |      1B     |      2B      |   23B  |       2B       |    10B   |     8B    |       10B        |   4B   |
 
-El servidor va a responder con "OK\n" para confirmar que recivió el mensaje 
+El servidor va a responder con "OK\n" para confirmar que recibió un batch de forma correcta.

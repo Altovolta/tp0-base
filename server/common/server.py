@@ -4,6 +4,8 @@ import logging
 import signal
 from . import utils, comunication as com
 
+BETS_PER_BATCH = 5 #borrar
+
 class Server:
     def __init__(self, port, listen_backlog):
         # Initialize server socket
@@ -41,19 +43,23 @@ class Server:
         client socket will also be closed
         """
         try:
-            msg = com.receive_message(client_sock)
-            if msg is None: 
-                client_sock.close()
-                return 
+            cantidad_de_apuestas = 0
+            while True:
+                # msg = com.receive_message(client_sock)
+                # if msg is None: 
+                #     client_sock.close()
+                #     return 
+                # bet = process_message(msg)
+                bets = com.receive_batch(client_sock, BETS_PER_BATCH)
+                if bets is None:
+                    client_sock.close()
+                    return 
+                cantidad_de_apuestas += BETS_PER_BATCH #ver como recibir solo la cant de apuesta por batch
+                utils.store_bets(bets) 
+                logging.info(f"action: apuesta_recibida | result: success | cantidad: {cantidad_de_apuestas}")
 
-            bet = self.process_message(msg)
-            utils.store_bets([bet]) 
-            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-
-            addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-
-            com.send_all(client_sock, "OK\n")
+                #logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+                #com.send_all(client_sock, "OK\n")
 
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
@@ -84,16 +90,4 @@ class Server:
         self._server_socket.close()
         self._got_close_signal = True
 
-    def process_message(self, msg):
-        id_agencia = msg[0]
-        name_len = int(msg[1:3])
-        name = msg[3:3 + name_len]
-        apellido_len = int(msg[26:28])
-        apellido = msg[28:28 + apellido_len]
-        dni = msg[38:46]
-        fecha_nac = msg[46:56]
-        numero = msg[56:]
 
-        #logging.debug(f"id: {id_agencia} | n_len: {name_len} | name: {name} | a_len: {apellido_len} | apell: {apellido} | dni: {dni} | nac: {fecha_nac} | num: {numero}")
-
-        return utils.Bet(id_agencia, name, apellido, dni, fecha_nac, numero)

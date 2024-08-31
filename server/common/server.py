@@ -42,7 +42,7 @@ class Server:
         """
         try:
             msg = self.receive_message(client_sock)
-            if msg is None: #el cliente se desconecto
+            if msg is None: 
                 client_sock.close()
                 return 
 
@@ -53,10 +53,10 @@ class Server:
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            self.send_all(client_sock, "OK\n")
+
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
 
@@ -113,3 +113,17 @@ class Server:
             msg += buf
         
         return msg
+
+    def send_all(self, socket, msg):
+    
+        bytes_to_send = len(msg)
+        bytes_sent = 0
+
+        while bytes_to_send > bytes_sent:
+            n = socket.send(msg[bytes_sent:].encode('utf-8'))
+            if n == 0: # client disconnected
+                return 0
+            bytes_sent += n
+
+        return bytes_sent
+    

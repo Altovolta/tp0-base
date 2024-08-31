@@ -56,8 +56,6 @@ func (c *Client) createClientSocket() error {
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
 
 	sig_channel := make(chan os.Signal, 1)
 	signal.Notify(sig_channel, syscall.SIGTERM)
@@ -75,7 +73,6 @@ func (c *Client) StartClientLoop() {
 	status := SendBet(c, bet)
 
 	if status != 0 {
-		log.Errorf("No se pudo enviar el mensaje", c.config.ID)
 		c.conn.Close()
 		return
 	}

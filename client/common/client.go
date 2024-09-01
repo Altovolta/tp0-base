@@ -64,7 +64,6 @@ func (c *Client) StartClientLoop() {
 		log.Criticalf("hubo un error: %s", erro)
 		return
 	}
-	defer file.Close() // close the file when func end
 	c.createClientSocket()
 
 	fscanner := bufio.NewScanner(file)

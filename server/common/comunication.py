@@ -5,21 +5,6 @@ BET_MESSAGE_CODE = "0"
 BATCH_END_CODE = "1"
 ALL_BETS_SENT_CODE = "2"
 
-# def receive_batch(client_socket, bets_per_batch):
-#     bets = []
-
-#     for _ in range(0, bets_per_batch):
-#         msg = receive_message(client_socket)
-#         if msg is None: 
-#             return None #ver que hacer aca
-
-#         # addr = client_socket.getpeername()
-#         # logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-#         bet = process_message(msg) # puede haber error? -> solo si me mandan mal el mensaje
-#         bets.append(bet)
-#     return bets
-
-
 """
 Receives a message from a socket. It returns None if the client was desconnected
 when receiving the message.
@@ -36,8 +21,6 @@ def receive_bet_message(client_socket):
         return
     bet = utils.process_bet_message(msg)
     return bet
-
-
 
 def recv_bytes(socket, bytes_to_recv):
     msg = ""

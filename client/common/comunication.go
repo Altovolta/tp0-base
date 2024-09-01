@@ -2,13 +2,16 @@ package common
 
 import "fmt"
 
-func SendBetsBatch(c *Client, bets []Bet) {
+func SendBetsBatch(c *Client, bets []Bet) int {
 
 	for _, bet := range bets {
-		SendBet(c, &bet)
-	}
-	SendBatchEnd(c)
+		res := SendBet(c, &bet)
 
+		if res == -1 {
+			return -1
+		}
+	}
+	return SendBatchEnd(c)
 }
 
 func SendBet(c *Client, bet *Bet) int {
@@ -36,10 +39,7 @@ func send_message(c *Client, msg string) int {
 
 		n, err := c.conn.Write([]byte(msg[bytes_sent:]))
 		if err != nil {
-			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
+			// the socket was closed
 			return -1
 		}
 		bytes_sent += n

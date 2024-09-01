@@ -42,33 +42,28 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
-        try:
-            bets = []
-            cantidad_de_apuestas = 0
+        bets = []
+        try:   
             while True:
                 
                 msg = com.recv_header(client_sock)
-
                 if msg is None: #se desconecto el cliente
                     break
                 
                 if msg == com.BET_MESSAGE_CODE:
-                    logging.debug("RECIBI BET CODE")
                     bet = com.receive_bet_message(client_sock)
                     bets.append(bet)
                 elif msg == com.BATCH_END_CODE:
-                    # falta manejar cuando hay error al procesar las bet del batch
                     utils.store_bets(bets)
-                    cantidad_de_apuestas += len(bets)
-                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {cantidad_de_apuestas}")
+                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                     bets = []
                     com.send_all(client_sock, "OK\n")
                 elif msg == com.ALL_BETS_SENT_CODE:
                     logging.debug("ALL BETS WERE RECEIVED")
-                    if len(bets) > 0:
-                        utils.store_bets(bets)
                     break
-
+        except ValueError as e:
+            logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
+            com.send_all(client_sock, "E\n")
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:

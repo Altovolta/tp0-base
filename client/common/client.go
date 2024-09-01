@@ -60,36 +60,33 @@ func (c *Client) StartClientLoop() {
 	signal.Notify(sig_channel, syscall.SIGTERM)
 
 	file, erro := os.Open("agency.csv")
-
 	if erro != nil {
 		log.Criticalf("hubo un error: %s", erro)
 		return
 	}
-
-	c.createClientSocket() //chequeo de errores
+	defer file.Close() // close the file when func end
+	c.createClientSocket()
 
 	fscanner := bufio.NewScanner(file)
 
+	go func() {
+		sig := <-sig_channel
+		log.Debugf("signal received | signal: %s", sig)
+		file.Close()
+		c.conn.Close()
+		log.Debugf("Closing file and socket connection")
+	}()
+
 	for {
-		select {
-		case sig := <-sig_channel:
-			log.Debugf("signal received | signal: %s", sig)
-			file.Close()
-			c.conn.Close()
-			// agregar mensaje de cierre de archivo y socket
-			return
-		default:
-		}
 
 		bets := get_bet_batch(fscanner, c.config.BatchSize)
-		SendBetsBatch(c, bets)
-
-		if len(bets) < c.config.BatchSize {
-			SendAllBetsSent(c)
-			break
+		status := SendBetsBatch(c, bets)
+		//if the socket was closed, return
+		if status == -1 {
+			return
 		}
 
-		_, err := bufio.NewReader(c.conn).ReadString('\n')
+		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
@@ -97,14 +94,24 @@ func (c *Client) StartClientLoop() {
 			)
 			break
 		}
+		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
+			c.config.ID,
+			msg,
+		)
+		if msg != "OK\n" {
+			log.Errorf("action: send_batch | result: fail | client_id: %v", c.config.ID)
+		}
+
+		if len(bets) < c.config.BatchSize {
+			SendAllBetsSent(c)
+			break
+		}
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
 
 	}
-
-	// terminé de enviar todo
+	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 	file.Close()
 	c.conn.Close()
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }

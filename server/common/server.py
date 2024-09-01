@@ -35,8 +35,11 @@ class Server:
                 break
             self.__handle_client_connection(client_sock)
 
-            
-
+            if self.agencias_terminaron == NUM_DE_AGENCIAS:
+                self.agencias_terminaron = 0
+                logging.info("action: sorteo | result: success")
+                
+  
     def __handle_client_connection(self, client_sock):
         """
         Read message from a specific client socket and closes the socket
@@ -49,7 +52,7 @@ class Server:
             client_id = pr.recv_bytes(client_sock, 1)
             logging.debug(f"CLIENT {client_id} connected")
             self.clients_sockets[client_id] = client_sock
-            
+
             while True:
                 
                 msg = pr.recv_bytes(client_sock, 1)
@@ -66,8 +69,7 @@ class Server:
                     pr.send_all(client_sock, "OK\n")
                 elif msg == pr.ALL_BETS_SENT_CODE:
                     logging.debug("ALL BETS WERE RECEIVED")
-                    # agrego a una lista de clientes o aumento contador
-                    # si la cantidad de clientes_finalizaron == 5, hago el sorteo? 
+                    self.agencias_terminaron += 1
                     break
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
@@ -94,8 +96,7 @@ class Server:
         except OSError as e:
             if not self._got_close_signal:
                 logging.critical(f"action: accept_connections | result: fail | error: {e}")
-            
-        
+
     def sigterm_handler(self, signal, frame):
         logging.debug("Server socket closed")
         self._server_socket.close()

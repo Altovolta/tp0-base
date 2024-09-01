@@ -1,22 +1,40 @@
 package common
 
-func SendBets(c *Client, bets []Bet) {
+import "fmt"
+
+func SendBetsBatch(c *Client, bets []Bet) {
 
 	for _, bet := range bets {
 		SendBet(c, &bet)
 	}
+	SendBatchEnd(c)
 
 }
 
 func SendBet(c *Client, bet *Bet) int {
+	bet_msg_code := "0"
+	bet_string := bet.ParseBet()
+	mensaje := fmt.Sprintf("%s%s", bet_msg_code, bet_string)
+	return send_message(c, mensaje)
+}
 
-	mensaje := bet.ParseBet()
-	bytes_to_send := len(mensaje)
+func SendBatchEnd(c *Client) int {
+	batch_end_code := "1"
+	return send_message(c, batch_end_code)
+}
+
+func SendAllBetsSent(c *Client) int {
+	all_bets_sent_code := "2"
+	return send_message(c, all_bets_sent_code)
+}
+
+func send_message(c *Client, msg string) int {
+	bytes_to_send := len(msg)
 	bytes_sent := 0
 
 	for bytes_to_send > bytes_sent {
 
-		n, err := c.conn.Write([]byte(mensaje[bytes_sent:]))
+		n, err := c.conn.Write([]byte(msg[bytes_sent:]))
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,

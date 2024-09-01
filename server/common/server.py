@@ -43,23 +43,31 @@ class Server:
         client socket will also be closed
         """
         try:
+            bets = []
             cantidad_de_apuestas = 0
             while True:
-                # msg = com.receive_message(client_sock)
-                # if msg is None: 
-                #     client_sock.close()
-                #     return 
-                # bet = process_message(msg)
-                bets = com.receive_batch(client_sock, BETS_PER_BATCH)
-                if bets is None:
-                    client_sock.close()
-                    return 
-                cantidad_de_apuestas += BETS_PER_BATCH #ver como recibir solo la cant de apuesta por batch
-                utils.store_bets(bets) 
-                logging.info(f"action: apuesta_recibida | result: success | cantidad: {cantidad_de_apuestas}")
+                
+                msg = com.recv_header(client_sock)
 
-                #logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-                #com.send_all(client_sock, "OK\n")
+                if msg is None: #se desconecto el cliente
+                    break
+                
+                if msg == com.BET_MESSAGE_CODE:
+                    logging.debug("RECIBI BET CODE")
+                    bet = com.receive_bet_message(client_sock)
+                    bets.append(bet)
+                elif msg == com.BATCH_END_CODE:
+                    # falta manejar cuando hay error al procesar las bet del batch
+                    utils.store_bets(bets)
+                    cantidad_de_apuestas += len(bets)
+                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {cantidad_de_apuestas}")
+                    bets = []
+                    com.send_all(client_sock, "OK\n")
+                elif msg == com.ALL_BETS_SENT_CODE:
+                    logging.debug("ALL BETS WERE RECEIVED")
+                    if len(bets) > 0:
+                        utils.store_bets(bets)
+                    break
 
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")

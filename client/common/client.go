@@ -71,7 +71,6 @@ func (c *Client) StartClientLoop() {
 	fscanner := bufio.NewScanner(file)
 
 	for {
-
 		select {
 		case sig := <-sig_channel:
 			log.Debugf("signal received | signal: %s", sig)
@@ -83,22 +82,21 @@ func (c *Client) StartClientLoop() {
 		}
 
 		bets := get_bet_batch(fscanner, c.config.BatchSize)
-		SendBets(c, bets)
+		SendBetsBatch(c, bets)
 
 		if len(bets) < c.config.BatchSize {
+			SendAllBetsSent(c)
 			break
 		}
 
-		// _, err := bufio.NewReader(c.conn).ReadString('\n')
-		// if err != nil {
-		// 	log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-		// 		c.config.ID,
-		// 		err,
-		// 	)
-		// 	break
-		// }
-
-		//log.Infof("action: apuesta_enviada | result: success | dni: %d | numero: %d", bet.DOCUMENTO, bet.NUMERO)
+		_, err := bufio.NewReader(c.conn).ReadString('\n')
+		if err != nil {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			break
+		}
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)

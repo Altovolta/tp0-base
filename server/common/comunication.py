@@ -1,31 +1,23 @@
 from . import utils
 import logging
 
-def receive_batch(client_socket, bets_per_batch):
-    bets = []
+BET_MESSAGE_CODE = "0"
+BATCH_END_CODE = "1"
+ALL_BETS_SENT_CODE = "2"
 
-    for _ in range(0, bets_per_batch):
-        msg = receive_message(client_socket)
-        if msg is None: 
-            return None #ver que hacer aca
+# def receive_batch(client_socket, bets_per_batch):
+#     bets = []
 
-        # addr = client_socket.getpeername()
-        # logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-        bet = process_message(msg) # puede haber error? -> solo si me mandan mal el mensaje
-        bets.append(bet)
-    return bets
+#     for _ in range(0, bets_per_batch):
+#         msg = receive_message(client_socket)
+#         if msg is None: 
+#             return None #ver que hacer aca
 
-
-def process_message(msg):
-    id_agencia = msg[0]
-    name_len = int(msg[1:3])
-    name = msg[3:3 + name_len]
-    apellido_len = int(msg[26:28])
-    apellido = msg[28:28 + apellido_len]
-    dni = msg[38:46]
-    fecha_nac = msg[46:56]
-    numero = msg[56:]
-    return utils.Bet(id_agencia, name, apellido, dni, fecha_nac, numero)
+#         # addr = client_socket.getpeername()
+#         # logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+#         bet = process_message(msg) # puede haber error? -> solo si me mandan mal el mensaje
+#         bets.append(bet)
+#     return bets
 
 
 """
@@ -33,13 +25,26 @@ Receives a message from a socket. It returns None if the client was desconnected
 when receiving the message.
 On success, it returns the message
 """
-def receive_message(client_socket):
+
+def recv_header(socket):
+    return recv_bytes(socket, 1)
+
+def receive_bet_message(client_socket):
     bytes_to_recv = 60
+    msg = recv_bytes(client_socket, bytes_to_recv)
+    if msg is None:
+        return
+    bet = utils.process_bet_message(msg)
+    return bet
+
+
+
+def recv_bytes(socket, bytes_to_recv):
     msg = ""
 
     while bytes_to_recv > 0:
 
-        buf = client_socket.recv(bytes_to_recv).rstrip().decode('utf-8')
+        buf = socket.recv(bytes_to_recv).rstrip().decode('utf-8')
 
         if len(buf) == 0: # client disconnected
             return None

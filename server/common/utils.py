@@ -49,3 +49,14 @@ def load_bets() -> list[Bet]:
         for row in reader:
             yield Bet(row[0], row[1], row[2], row[3], row[4], row[5])
 
+
+def process_bet_message(msg):
+    id_agencia = msg[0]
+    name_len = int(msg[1:3])
+    name = msg[3:3 + name_len]
+    apellido_len = int(msg[26:28])
+    apellido = msg[28:28 + apellido_len]
+    dni = msg[38:46]
+    fecha_nac = msg[46:56]
+    numero = msg[56:]
+    return Bet(id_agencia, name, apellido, dni, fecha_nac, numero)

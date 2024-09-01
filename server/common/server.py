@@ -2,7 +2,7 @@ import socket
 import logging
 
 import signal
-from . import utils, comunication as com
+from . import server_protocol as pr, utils
 
 BETS_PER_BATCH = 5 #borrar
 
@@ -46,24 +46,24 @@ class Server:
         try:   
             while True:
                 
-                msg = com.recv_header(client_sock)
+                msg = pr.recv_header(client_sock)
                 if msg is None: #se desconecto el cliente
                     break
                 
-                if msg == com.BET_MESSAGE_CODE:
-                    bet = com.receive_bet_message(client_sock)
+                if msg == pr.BET_MESSAGE_CODE:
+                    bet = pr.receive_bet_message(client_sock)
                     bets.append(bet)
-                elif msg == com.BATCH_END_CODE:
+                elif msg == pr.BATCH_END_CODE:
                     utils.store_bets(bets)
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                     bets = []
-                    com.send_all(client_sock, "OK\n")
-                elif msg == com.ALL_BETS_SENT_CODE:
+                    pr.send_all(client_sock, "OK\n")
+                elif msg == pr.ALL_BETS_SENT_CODE:
                     logging.debug("ALL BETS WERE RECEIVED")
                     break
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
-            com.send_all(client_sock, "E\n")
+            pr.send_all(client_sock, "E\n")
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:

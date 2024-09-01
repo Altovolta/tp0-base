@@ -59,3 +59,16 @@ def process_bet_message(client_id, msg):
     fecha_nac = msg[45:55]
     numero = msg[55:]
     return Bet(client_id, name, apellido, dni, fecha_nac, numero)
+
+
+def get_winners_per_client() -> dict:
+
+    winners_per_agency = {"1": [], "2": [], "3": [], "4": [], "5": []}
+    bets = load_bets()
+
+    for bet in bets:
+        if has_won(bet):
+            agency_id = str(bet.agency)
+            winners_per_agency[agency_id].append(bet.document)
+
+    return winners_per_agency

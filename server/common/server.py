@@ -38,7 +38,7 @@ class Server:
             if self.agencias_terminaron == NUM_DE_AGENCIAS:
                 self.agencias_terminaron = 0
                 logging.info("action: sorteo | result: success")
-                
+                self.__realizar_sorteo()
   
     def __handle_client_connection(self, client_sock):
         """
@@ -96,6 +96,13 @@ class Server:
         except OSError as e:
             if not self._got_close_signal:
                 logging.critical(f"action: accept_connections | result: fail | error: {e}")
+
+
+    def __realizar_sorteo(self):
+        winners = utils.get_winners_per_client()
+        logging.debug(f"The winners are: {winners}")
+        return
+
 
     def sigterm_handler(self, signal, frame):
         logging.debug("Server socket closed")

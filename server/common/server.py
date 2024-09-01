@@ -4,7 +4,7 @@ import logging
 import signal
 from . import server_protocol as pr, utils
 
-BETS_PER_BATCH = 5 #borrar
+NUM_DE_AGENCIAS = 5 #ponerlos en env var?
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -12,6 +12,8 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self.clients_sockets = {}
+        self.agencias_terminaron = 0
         
         self._got_close_signal = False
         signal.signal(signal.SIGTERM, self.sigterm_handler)
@@ -43,15 +45,19 @@ class Server:
         client socket will also be closed
         """
         bets = []
-        try:   
+        try:
+            client_id = pr.recv_bytes(client_sock, 1)
+            logging.debug(f"CLIENT {client_id} connected")
+            self.clients_sockets[client_id] = client_sock
+            
             while True:
                 
-                msg = pr.recv_header(client_sock)
+                msg = pr.recv_bytes(client_sock, 1)
                 if msg is None: #se desconecto el cliente
                     break
                 
                 if msg == pr.BET_MESSAGE_CODE:
-                    bet = pr.receive_bet_message(client_sock)
+                    bet = pr.receive_bet_message(client_id, client_sock)
                     bets.append(bet)
                 elif msg == pr.BATCH_END_CODE:
                     utils.store_bets(bets)
@@ -60,6 +66,8 @@ class Server:
                     pr.send_all(client_sock, "OK\n")
                 elif msg == pr.ALL_BETS_SENT_CODE:
                     logging.debug("ALL BETS WERE RECEIVED")
+                    # agrego a una lista de clientes o aumento contador
+                    # si la cantidad de clientes_finalizaron == 5, hago el sorteo? 
                     break
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")

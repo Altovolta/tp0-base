@@ -180,11 +180,17 @@ Puden obtener un listado del último commit de cada rama ejecutando `git ls-remo
 Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
 
 
-## Protocolo ej6
+## Protocolo ej7
 
 La aplicación va a usar un protocolo basado en texto y es el siguiente:
 
+El cliente cuando se conecta envía su ID al servidor
+
+| ID |
+| 1B |
+
 Todos los mensajes del cliente van a tener el siguiente header:
+
 | tipo_mensaje |
 |      1B      |
 
@@ -196,8 +202,8 @@ donde, tipo mensaje puede tomar los siguientes valores:
 
 El mensaje de apuesta tiene los sigueintes campos:
 
-| nro_agencia | largo_nombre | nombre | largo_apellido | apellido | documento | fecha_nacimiento | numero |
-|      1B     |      2B      |   23B  |       2B       |    10B   |     8B    |       10B        |   4B   |
+| largo_nombre | nombre | largo_apellido | apellido | documento | fecha_nacimiento | numero |
+|      2B      |   23B  |       2B       |    10B   |     8B    |       10B        |   4B   |
 
 El servidor va a responder con "OK\n" para confirmar que recibió un batch de forma correcta.
 En caso de que haya un error al recibir un batch, el servidor va a responder con "E\n" y cierra la conexión con el cliente

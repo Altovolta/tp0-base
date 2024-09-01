@@ -3,7 +3,6 @@ package common
 import (
 	"bufio"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -31,9 +30,8 @@ func NewBet(nombre string, apellido string, dni string, nacimiento string, num s
 }
 
 func (bet *Bet) ParseBet() string {
-	client_id := os.Getenv("CLI_ID")
-	mensaje := fmt.Sprintf("%s%02d%-23s%02d%-10s%08d%s%04d",
-		client_id, len(bet.NOMBRE), bet.NOMBRE, len(bet.APELLIDO), bet.APELLIDO,
+	mensaje := fmt.Sprintf("%02d%-23s%02d%-10s%08d%s%04d",
+		len(bet.NOMBRE), bet.NOMBRE, len(bet.APELLIDO), bet.APELLIDO,
 		bet.DOCUMENTO, bet.NACIMIENTO, bet.NUMERO,
 	)
 	return mensaje

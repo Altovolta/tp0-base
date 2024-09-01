@@ -66,6 +66,14 @@ func (c *Client) StartClientLoop() {
 	}
 	c.createClientSocket()
 
+	status := SendId(c.conn, c.config.ID)
+
+	if status == -1 {
+		//la conexion se cerró antes de poder enviar el id
+		file.Close()
+		return
+	}
+
 	fscanner := bufio.NewScanner(file)
 
 	go func() {
@@ -79,7 +87,7 @@ func (c *Client) StartClientLoop() {
 	for {
 
 		bets := get_bet_batch(fscanner, c.config.BatchSize)
-		status := SendBetsBatch(c, bets)
+		status := SendBetsBatch(c.conn, bets)
 		//if the socket was closed, return
 		if status == -1 {
 			return
@@ -102,7 +110,7 @@ func (c *Client) StartClientLoop() {
 		}
 
 		if len(bets) < c.config.BatchSize {
-			SendAllBetsSent(c)
+			SendAllBetsSent(c.conn)
 			break
 		}
 

@@ -11,15 +11,16 @@ when receiving the message.
 On success, it returns the message
 """
 
-def recv_header(socket):
-    return recv_bytes(socket, 1)
-
-def receive_bet_message(client_socket):
-    bytes_to_recv = 60
+def receive_bet_message(client_id, client_socket):
+    bytes_to_recv = 59
     msg = recv_bytes(client_socket, bytes_to_recv)
     if msg is None:
         return
-    bet = utils.process_bet_message(msg)
+    
+    addr = client_socket.getpeername()
+    logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+
+    bet = utils.process_bet_message(client_id, msg)
     return bet
 
 def recv_bytes(socket, bytes_to_recv):

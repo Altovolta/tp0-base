@@ -15,7 +15,7 @@ else
     echo "action: test_echo_server | result: fail"
 fi 
 
-docker stop echo-test  >/dev/null && docker rm echo-test  >/dev/null 
+docker container stop echo-test  >/dev/null && docker rm echo-test  >/dev/null 
 docker rmi echo_server_test:latest > /dev/null
-docker network rm -f testing_net
+docker network rm -f testing_net >/dev/null
 

@@ -75,7 +75,7 @@ func (c *Client) StartClientLoop() {
 	}
 
 	fscanner := bufio.NewScanner(file)
-
+	reader := bufio.NewReader(c.conn)
 	go func() {
 		sig := <-sig_channel
 		log.Debugf("signal received | signal: %s", sig)
@@ -93,13 +93,13 @@ func (c *Client) StartClientLoop() {
 			return
 		}
 
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
+		msg, err := reader.ReadString('\n')
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
-			break
+			return
 		}
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
 			c.config.ID,
@@ -121,4 +121,40 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 	file.Close()
 	c.conn.Close()
+
+	c.GetWinners()
+}
+
+func (c *Client) GetWinners() {
+
+	for {
+		c.createClientSocket()
+		reader := bufio.NewReader(c.conn)
+		AskForWinnersToServer(c.conn, c.config.ID)
+
+		msg, err := reader.ReadString('\n')
+		if err != nil {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			break
+		}
+		switch msg {
+		case "N\n":
+			log.Debugf("Todavía no se realizó el sorteo")
+			time.Sleep(c.config.LoopPeriod)
+			c.conn.Close()
+		default:
+			//obtengo los ganadores que me envía
+			cant_ganadores := ObtainWinnersAmount(reader)
+			if cant_ganadores == -1 {
+				log.Errorf("Error while receiving winners")
+			}
+			log.Debugf("action: consulta_ganadores | result: success | cant_ganadores: %v", cant_ganadores)
+			c.conn.Close()
+			return
+		}
+
+	}
 }

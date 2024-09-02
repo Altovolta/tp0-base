@@ -207,3 +207,14 @@ El mensaje de apuesta tiene los sigueintes campos:
 
 El servidor va a responder con "OK\n" para confirmar que recibió un batch de forma correcta.
 En caso de que haya un error al recibir un batch, el servidor va a responder con "E\n" y cierra la conexión con el cliente
+
+
+El cliente para poder consultar la lista de ganadores, debe enviar "{ID}3" al servidor. Si todavía no se hizo el sorteo, el servidor responderá con "N\n", por lo que el cliente volverá a consultar más tarde
+
+En el caso de que el servidor ya haya hecho el sorteo, este enviará "Y\n" y luego enviará los ganadores como:
+
+{Documento Ganador}\n" 
+
+por cada ganador.
+
+Una vez envía todos los ganadores a una agencia, envía el mensaje "FIN\n" indicando que ya terminó de enviar a los ganadores

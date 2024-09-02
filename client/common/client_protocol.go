@@ -1,12 +1,18 @@
 package common
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 )
 
 func SendId(conn net.Conn, id string) int {
 	return send_message(conn, id)
+}
+
+func AskForWinnersToServer(conn net.Conn, id string) int {
+	msg := fmt.Sprintf("%s3", id)
+	return send_message(conn, msg)
 }
 
 func SendBetsBatch(conn net.Conn, bets []Bet) int {
@@ -52,4 +58,23 @@ func send_message(conn net.Conn, msg string) int {
 		bytes_sent += n
 	}
 	return 0
+}
+
+func ObtainWinnersAmount(reader *bufio.Reader) int {
+
+	ganadores := 0
+	for {
+		msg, err := reader.ReadString('\n')
+		if err != nil {
+			// the socket was closed
+			return -1
+		}
+		if msg == "FIN\n" {
+			break
+		}
+		ganadores += 1
+
+	}
+	return ganadores
+
 }

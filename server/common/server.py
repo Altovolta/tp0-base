@@ -12,9 +12,8 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self.clients_sockets = {}
         self.agencias_terminaron = 0
-        
+        self.sorteo_realizado = False
         self._got_close_signal = False
         signal.signal(signal.SIGTERM, self.sigterm_handler)
 
@@ -27,18 +26,16 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
         while True:  
             client_sock = self.__accept_new_connection()
             if client_sock is None:
                 break
             self.__handle_client_connection(client_sock)
 
-            if self.agencias_terminaron == NUM_DE_AGENCIAS:
-                self.agencias_terminaron = 0
-                logging.info("action: sorteo | result: success")
-                self.__realizar_sorteo()
+            # if self.agencias_terminaron == NUM_DE_AGENCIAS:
+            #     self.agencias_terminaron = 0
+            #     logging.info("action: sorteo | result: success")
+            #     self.__realizar_sorteo()
   
     def __handle_client_connection(self, client_sock):
         """
@@ -51,10 +48,8 @@ class Server:
         try:
             client_id = pr.recv_bytes(client_sock, 1)
             logging.debug(f"CLIENT {client_id} connected")
-            self.clients_sockets[client_id] = client_sock
 
-            while True:
-                
+            while True: 
                 msg = pr.recv_bytes(client_sock, 1)
                 if msg is None: #se desconecto el cliente
                     break
@@ -69,8 +64,15 @@ class Server:
                     pr.send_all(client_sock, "OK\n")
                 elif msg == pr.ALL_BETS_SENT_CODE:
                     logging.debug("ALL BETS WERE RECEIVED")
-                    self.agencias_terminaron += 1
+                    self.client_finished()
                     break
+                elif msg == pr.ASK_FOR_WINNERS:
+                    if not self.sorteo_realizado:
+                        pr.send_raffle_pending(client_sock)
+                        break
+                    pr.send_winners(client_sock, client_id)
+                    break
+
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
             pr.send_all(client_sock, "E\n")
@@ -97,13 +99,13 @@ class Server:
             if not self._got_close_signal:
                 logging.critical(f"action: accept_connections | result: fail | error: {e}")
 
-
-    def __realizar_sorteo(self):
-        winners = utils.get_winners_per_client()
-        logging.debug(f"The winners are: {winners}")
-        return
-
-
+    
+    def client_finished(self):
+        self.agencias_terminaron += 1
+        if self.agencias_terminaron == NUM_DE_AGENCIAS:
+            self.sorteo_realizado = True
+            logging.info("action: sorteo | result: success")
+        
     def sigterm_handler(self, signal, frame):
         logging.debug("Server socket closed")
         self._server_socket.close()

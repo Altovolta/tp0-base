@@ -4,13 +4,31 @@ import logging
 BET_MESSAGE_CODE = "0"
 BATCH_END_CODE = "1"
 ALL_BETS_SENT_CODE = "2"
+ASK_FOR_WINNERS = "3"
+
+def send_winners(client_sock, client_id):
+
+    send_raffle_ready(client_sock)
+
+    winners = utils.get_winners(client_id)
+    for winner in winners:
+        logging.debug(f"Sending winner {winner.document} to client {client_id}")
+        msg = winner.document + "\n"
+        send_all(client_sock, msg)
+
+    return send_all(client_sock, "FIN\n")
+
+def send_raffle_pending(client_sock):
+    return send_all(client_sock, "N\n")
+
+def send_raffle_ready(client_sock):
+    return send_all(client_sock, "Y\n")
 
 """
 Receives a message from a socket. It returns None if the client was desconnected
 when receiving the message.
 On success, it returns the message
 """
-
 def receive_bet_message(client_id, client_socket):
     bytes_to_recv = 59
     msg = recv_bytes(client_socket, bytes_to_recv)

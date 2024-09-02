@@ -5,7 +5,7 @@ docker build . -f server_test/Dockerfile -t echo_server_test:latest
 docker network create testing_net
 docker network connect testing_net server
 
-answer=$(docker run --name=echo-test --env-file=server_test/server_config.txt \
+answer=$(docker run --rm --name=echo-test --env-file=server_test/server_config.txt \
          --network=testing_net echo_server_test:latest)
 
 if [ "$answer" = "hola" ] 

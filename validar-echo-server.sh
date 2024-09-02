@@ -17,5 +17,5 @@ fi
 
 docker stop echo-test  >/dev/null && docker rm echo-test  >/dev/null 
 docker rmi echo_server_test:latest > /dev/null
-docker network prune -f 
+docker network rm -f testing_net
 

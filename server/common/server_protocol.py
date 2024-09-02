@@ -8,7 +8,10 @@ ASK_FOR_WINNERS = "3"
 
 def send_winners(client_sock, client_id):
 
-    send_raffle_ready(client_sock)
+    status = send_raffle_ready(client_sock)
+    if status == -1:
+        logging.critical("Error while sending winners")
+        return
 
     winners = utils.get_winners(client_id)
     for winner in winners:

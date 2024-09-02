@@ -66,7 +66,6 @@ func ObtainWinnersAmount(reader *bufio.Reader) int {
 	for {
 		msg, err := reader.ReadString('\n')
 		if err != nil {
-			// the socket was closed
 			return -1
 		}
 		if msg == "FIN\n" {

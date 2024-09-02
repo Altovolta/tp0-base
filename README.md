@@ -209,7 +209,7 @@ El servidor va a responder con "OK\n" para confirmar que recibió un batch de fo
 En caso de que haya un error al recibir un batch, el servidor va a responder con "E\n" y cierra la conexión con el cliente
 
 
-El cliente para poder consultar la lista de ganadores, debe enviar "{ID}3" al servidor. Si todavía no se hizo el sorteo, el servidor responderá con "N\n", por lo que el cliente volverá a consultar más tarde
+El cliente para poder consultar la lista de ganadores, debe enviar "{ID_cliente}3" al servidor. Si todavía no se hizo el sorteo, el servidor responderá con "N\n", por lo que el cliente volverá a consultar más tarde
 
 En el caso de que el servidor ya haya hecho el sorteo, este enviará "Y\n" y luego enviará los ganadores como:
 

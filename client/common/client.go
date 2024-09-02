@@ -64,32 +64,32 @@ func (c *Client) StartClientLoop() {
 		log.Criticalf("hubo un error: %s", erro)
 		return
 	}
+	defer file.Close()
+
 	c.createClientSocket()
 
-	status := SendId(c.conn, c.config.ID)
+	go func() {
+		sig := <-sig_channel
+		log.Debugf("signal received | signal: %s", sig)
+		c.conn.Close()
+		log.Debugf("Closing file and socket connection")
+	}()
 
+	status := SendId(c.conn, c.config.ID)
 	if status == -1 {
-		//la conexion se cerró antes de poder enviar el id
-		file.Close()
+		//socket was closed
 		return
 	}
 
 	fscanner := bufio.NewScanner(file)
 	reader := bufio.NewReader(c.conn)
-	go func() {
-		sig := <-sig_channel
-		log.Debugf("signal received | signal: %s", sig)
-		file.Close()
-		c.conn.Close()
-		log.Debugf("Closing file and socket connection")
-	}()
 
 	for {
 
 		bets := get_bet_batch(fscanner, c.config.BatchSize)
 		status := SendBetsBatch(c.conn, bets)
-		//if the socket was closed, return
 		if status == -1 {
+			//if the socket was closed, return
 			return
 		}
 
@@ -110,7 +110,10 @@ func (c *Client) StartClientLoop() {
 		}
 
 		if len(bets) < c.config.BatchSize {
-			SendAllBetsSent(c.conn)
+			result := SendAllBetsSent(c.conn)
+			if result == -1 {
+				return
+			}
 			break
 		}
 
@@ -119,7 +122,6 @@ func (c *Client) StartClientLoop() {
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-	file.Close()
 	c.conn.Close()
 
 	c.GetWinners()
@@ -145,8 +147,7 @@ func (c *Client) GetWinners() {
 			log.Debugf("Todavía no se realizó el sorteo")
 			time.Sleep(c.config.LoopPeriod)
 			c.conn.Close()
-		default:
-			//obtengo los ganadores que me envía
+		case "Y\n":
 			cant_ganadores := ObtainWinnersAmount(reader)
 			if cant_ganadores == -1 {
 				log.Errorf("Error while receiving winners")

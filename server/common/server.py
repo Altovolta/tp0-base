@@ -63,7 +63,7 @@ class Server:
                     bets = []
                     pr.send_all(client_sock, "OK\n")
                 elif msg == pr.ALL_BETS_SENT_CODE:
-                    logging.debug("ALL BETS WERE RECEIVED")
+                    logging.debug(f"All bets from client {client_id} were received")
                     self.client_finished()
                     break
                 elif msg == pr.ASK_FOR_WINNERS:

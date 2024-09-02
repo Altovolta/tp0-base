@@ -1,8 +1,11 @@
 #!/bin/bash
 
 docker build . -f server_test/Dockerfile -t echo_server_test:latest
+
+docker network create testing_net
+
 answer=$(docker run --name=echo-test --env-file=server_test/server_config.txt \
-         --network=tp0_testing_net echo_server_test:latest)
+         --network=testing_net echo_server_test:latest)
 
 if [ "$answer" == "hola" ] 
 then 

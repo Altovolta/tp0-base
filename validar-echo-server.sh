@@ -8,7 +8,7 @@ docker network connect testing_net server
 answer=$(docker run --name=echo-test --env-file=server_test/server_config.txt \
          --network=testing_net echo_server_test:latest)
 
-if [ "$answer" == "hola" ] 
+if [ "$answer" = "hola" ] 
 then 
     echo "action: test_echo_server | result: success"
 else 

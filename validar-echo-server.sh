@@ -2,7 +2,7 @@
 
 docker build . -f server_test/Dockerfile -t echo_server_test:latest
 
-docker network inspect my_local_network >/dev/null 2>&1 || docker network create testing_net
+docker network inspect testing_net >/dev/null 2>&1 || docker network create testing_net
 docker network connect testing_net server
 
 answer=$(docker run --rm --name=echo-test --env-file=server_test/server_config.txt \

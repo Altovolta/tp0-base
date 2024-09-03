@@ -6,7 +6,6 @@ def add_server_compose(compose_config):
                         'container_name': 'server',  
                         'image': 'server:latest',
                         'entrypoint': 'python3 /main.py',
-                        'environment': ['PYTHONUNBUFFERED=1', 'LOGGING_LEVEL=DEBUG'],
                         'networks': ['testing_net'],
                         'volumes': ['./server/config.ini:/config.ini']
                      }
@@ -19,7 +18,6 @@ def add_client_compose(compose_config, client_id):
                         'container_name': client_name,
                         'image': 'client:latest',
                         'entrypoint': '/client',
-                        'environment': [f'CLI_ID={client_id}', 'CLI_LOG_LEVEL=DEBUG'],
                         'networks': ['testing_net'],
                         'depends_on': ['server'],
                         'volumes': ['./client/config.yaml:/config.yaml']

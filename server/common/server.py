@@ -6,6 +6,11 @@ from . import server_protocol as pr, utils
 
 NUM_DE_AGENCIAS = 5 #ponerlos en env var?
 
+BET_MESSAGE_CODE = "0"
+BATCH_END_CODE = "1"
+ALL_BETS_SENT_CODE = "2"
+ASK_FOR_WINNERS = "3"
+
 class Server:
     def __init__(self, port, listen_backlog):
         # Initialize server socket
@@ -32,10 +37,6 @@ class Server:
                 break
             self.__handle_client_connection(client_sock)
 
-            # if self.agencias_terminaron == NUM_DE_AGENCIAS:
-            #     self.agencias_terminaron = 0
-            #     logging.info("action: sorteo | result: success")
-            #     self.__realizar_sorteo()
   
     def __handle_client_connection(self, client_sock):
         """
@@ -44,42 +45,43 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
+        protocol = pr.ServerProtocol(client_sock)
         bets = []
         try:
-            client_id = pr.recv_bytes(client_sock, 1)
+            client_id = protocol.recv_bytes(1)
             logging.debug(f"CLIENT {client_id} connected")
 
             while True: 
-                msg = pr.recv_bytes(client_sock, 1)
-                if msg is None: #se desconecto el cliente
+                msg_code = protocol.receive_message_code() #pr.recv_bytes(client_sock, 1)
+                if msg_code is None: #se desconecto el cliente
                     break
                 
-                if msg == pr.BET_MESSAGE_CODE:
-                    bet = pr.receive_bet_message(client_id, client_sock)
+                if msg_code == BET_MESSAGE_CODE:
+                    bet = protocol.receive_bet_message(client_id)
                     bets.append(bet)
-                elif msg == pr.BATCH_END_CODE:
+                elif msg_code == BATCH_END_CODE:
                     utils.store_bets(bets)
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                     bets = []
-                    pr.send_all(client_sock, "OK\n")
-                elif msg == pr.ALL_BETS_SENT_CODE:
+                    protocol.send_all("OK\n")
+                elif msg_code == ALL_BETS_SENT_CODE:
                     logging.debug(f"All bets from client {client_id} were received")
                     self.client_finished()
                     break
-                elif msg == pr.ASK_FOR_WINNERS:
+                elif msg_code == ASK_FOR_WINNERS:
                     if not self.sorteo_realizado:
-                        pr.send_raffle_pending(client_sock)
+                        protocol.send_raffle_pending()
                         break
-                    pr.send_winners(client_sock, client_id)
+                    protocol.send_winners(client_id)
                     break
 
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
-            pr.send_all(client_sock, "E\n")
+            protocol.send_all("E\n")
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
-            client_sock.close()
+            protocol.close()
 
     def __accept_new_connection(self):
         """

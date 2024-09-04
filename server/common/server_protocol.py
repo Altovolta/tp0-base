@@ -1,4 +1,5 @@
 from . import utils
+from common.constants import *
 import logging
 
 class ServerProtocol:
@@ -34,7 +35,7 @@ class ServerProtocol:
 
         while bytes_to_recv > 0:
 
-            buf = self.client_sock.recv(bytes_to_recv).rstrip().decode('utf-8')
+            buf = self.client_sock.recv(bytes_to_recv).decode('utf-8')
             if len(buf) == 0: # client disconnected
                 return None
 
@@ -56,30 +57,46 @@ class ServerProtocol:
     On success, it returns the bet
     """
     def receive_bet_message(self, client_id):
-        bytes_to_recv = 59
+        bytes_to_recv = BET_LEN
         msg = self.recv_bytes(bytes_to_recv)
         if msg is None:
-            return None
+            return
         
         addr = self.client_sock.getpeername()
         logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
         bet = utils.process_bet_message(client_id, msg)
         return bet
+    
+    """
+    Its receives a batch from the client. If there is a problem while receiveng, it returs false
+    Otherwise, it return all the bets yaht were in the batch
+    """
+
+    def receive_batch(self, client_id):
+
+        num_of_bets = self.recv_bytes(AMOUNT_OF_BETS_IN_BATCH_LEN)
+        bets = []
+        for _ in range (0, int(num_of_bets)):
+            bet = self.receive_bet_message(client_id)
+            if bet is None:
+                return None
+            bets.append(bet)
+        return bets
 
     """
     Sends that the raffle is still pending through the socket.
     It returns 0 if there was an error while sending
     """
     def send_raffle_pending(self):
-        return self.send_all("N\n")
+        return self.send_all(RAFFLE_PENDING)
 
     """
     Sends that the raffle is ready through the socket.
     It returns 0 if there was an error while sending
     """
     def send_raffle_ready(self):
-        return self.send_all("Y\n")
+        return self.send_all(RAFFLE_READY)
     
     """
     Sends the raffle winners through the socket.
@@ -94,4 +111,4 @@ class ServerProtocol:
             if self.send_all(msg) == 0:
                 return 0
 
-        return self.send_all("FIN\n")
+        return self.send_all(ALL_WINNERS_SENT)

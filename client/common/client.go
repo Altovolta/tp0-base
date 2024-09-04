@@ -90,6 +90,8 @@ func (c *Client) StartClientLoop() {
 	for {
 
 		bets := get_bet_batch(fscanner, c.config.BatchSize)
+		log.Debugf("GOT BATCH, SENDING..")
+		// meto todo en un string unico?
 		status := SendBetsBatch(c.conn, bets)
 		if status == -1 {
 			//if the socket was closed, return
@@ -138,7 +140,7 @@ func (c *Client) GetWinners() {
 	for !c.stop {
 		//c.createClientSocket()
 		reader := bufio.NewReader(c.conn)
-		AskForWinnersToServer(c.conn, c.config.ID)
+		AskForWinnersToServer(c.conn)
 		log.Debugf("Esperando por ganadores...")
 		msg, err := reader.ReadString('\n')
 		if err != nil {

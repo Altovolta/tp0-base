@@ -1,21 +1,17 @@
 import logging
 from . import server_protocol as pr, utils
 from multiprocessing import Lock, Value, Manager
-BET_MESSAGE_CODE = "0"
-BATCH_END_CODE = "1"
-ALL_BETS_SENT_CODE = "2"
-ASK_FOR_WINNERS = "3"
+from . import constants as const
 
-AMOUNT_OF_CLIENTS = 5
 
 class ClientHandler:
 
     def __init__(self, protocol:pr.ServerProtocol, client_id, lock, agencias_terminaron, winners, sorteo_realizado):
-        self.protocol = protocol #crear clase protocol para esto y usar las func de pr
+        self.protocol = protocol 
         self.bets = []
         self.client_id = client_id
         self.file_lock = lock
-        self.agencias_terminaron = agencias_terminaron #es tipo Value
+        self.agencias_terminaron = agencias_terminaron
         self.winners = winners
         self.sorteo_realizado = sorteo_realizado
 
@@ -25,16 +21,15 @@ class ClientHandler:
 
             while True: 
                 msg = self.protocol.receive_message_code()
-                if msg is None: #sclient disconnected
+                if msg is None: #client disconnected
                     return
                 
-                if msg == BET_MESSAGE_CODE:
-                    self.handle_bet_message()
-                elif msg == BATCH_END_CODE:
-                    self.handle_batch_end_message()
-                elif msg == ALL_BETS_SENT_CODE: 
+                if msg == const.BATCH_MESSAGE_CODE:
+                    if self.handle_batch_message() is None:
+                        break
+                elif msg == const.ALL_BETS_SENT_CODE: 
                     self.handle_all_bets_sent_message()
-                elif msg == ASK_FOR_WINNERS:
+                elif msg == const.ASK_FOR_WINNERS:
                     status = self.handle_winners_request_message()
                     if  status is None:
                         logging.error("Failed to send winners")        
@@ -59,26 +54,31 @@ class ClientHandler:
         logging.debug(f"Closing connection for client {self.client_id}")
         self.protocol.close()
 
-    def handle_bet_message(self):
-        bet = self.protocol.receive_bet_message(self.client_id)
-        if bet is None:
-            logging.error("Error while receiving the bet")
-            return False
-        self.bets.append(bet)
+    """
+    Handler that receives the batch of bets and stores them
+    """
+
+    def handle_batch_message(self):
+        bets = self.protocol.receive_batch(self.client_id)
+        if bets is None:
+            return
+        logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+        with self.file_lock:
+            utils.store_bets(bets)
+        if self.protocol.send_all("OK\n") == 0:
+            return None
         return True
 
-    def handle_batch_end_message(self):
-        with self.file_lock:
-            utils.store_bets(self.bets)
-        logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(self.bets)}")
-        self.bets = []
-        self.protocol.send_all("OK\n")
-
+    """
+    Handler that manages ALL_BETS_SENT command.
+    If the number of agencies that sent all of its batches is the maximun amount,
+    it obtains the raffle winners
+    """
     def handle_all_bets_sent_message(self):
         logging.debug(f"All bets from client {self.client_id} were received")
         with self.agencias_terminaron.get_lock():
             self.agencias_terminaron.value += 1
-            if self.agencias_terminaron.value < AMOUNT_OF_CLIENTS:
+            if self.agencias_terminaron.value < const.AMOUNT_OF_CLIENTS:
                 return
         # if its the last one to send all the bets, it loads the winners
         self.get_winners()
@@ -87,6 +87,11 @@ class ClientHandler:
         
         logging.info("action: sorteo | result: success")
 
+
+    """
+    Handles the ASK_FOR_WINNERS command. If the draw was made, it send the 
+    winners of an agency to the client
+    """
     def handle_winners_request_message(self):
         with self.sorteo_realizado.get_lock():
             if self.sorteo_realizado.value == False:
@@ -97,6 +102,9 @@ class ClientHandler:
             return None
         return True
     
+    """
+    Gets the winners from the storage and its saves it in self.winners array
+    """
     def get_winners(self):
         bets = []
         with self.file_lock:
@@ -106,6 +114,10 @@ class ClientHandler:
             if utils.has_won(bet):
                 self.winners.append(bet)
     
+
+    """
+    Returns the winner bets that has the id of the client
+    """
     def get_my_winners(self):
         my_winners = []
 

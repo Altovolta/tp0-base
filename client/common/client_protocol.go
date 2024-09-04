@@ -4,38 +4,30 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"strings"
 )
 
 func SendId(conn net.Conn, id string) int {
 	return send_message(conn, id)
 }
 
-func AskForWinnersToServer(conn net.Conn, id string) int {
+func AskForWinnersToServer(conn net.Conn) int {
 	return send_message(conn, "3")
 }
 
 func SendBetsBatch(conn net.Conn, bets []Bet) int {
 
+	var buf []string
+
 	for _, bet := range bets {
-		res := SendBet(conn, &bet)
-
-		if res == -1 {
-			return -1
-		}
+		parsed_bet := bet.ParseBet()
+		buf = append(buf, parsed_bet)
 	}
-	return SendBatchEnd(conn)
-}
 
-func SendBet(conn net.Conn, bet *Bet) int {
-	bet_msg_code := "0"
-	bet_string := bet.ParseBet()
-	mensaje := fmt.Sprintf("%s%s", bet_msg_code, bet_string)
-	return send_message(conn, mensaje)
-}
-
-func SendBatchEnd(conn net.Conn) int {
-	batch_end_code := "1"
-	return send_message(conn, batch_end_code)
+	batch := strings.Join(buf, "")
+	msg := fmt.Sprintf("%s%04d%s", "0", len(bets), batch) // le agrego el código al batch
+	log.Debugf("Ya parsie, ahora envio")
+	return send_message(conn, msg)
 }
 
 func SendAllBetsSent(conn net.Conn) int {

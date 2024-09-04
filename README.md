@@ -180,7 +180,9 @@ Puden obtener un listado del último commit de cada rama ejecutando `git ls-remo
 Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
 
 
-## Protocolo ej7
+# EJERCICIO 8
+
+## Protocolo
 
 La aplicación va a usar un protocolo basado en texto y es el siguiente:
 
@@ -196,11 +198,13 @@ Todos los mensajes del cliente van a tener el siguiente header:
 
 donde, tipo mensaje puede tomar los siguientes valores:
 
-- "0" -> el mensaje es una apuesta
-- "1" -> indica que se termino de enviar el batch
-- "2" -> indica que se enviaron todos los batch de la agencia
+- "0" -> indica que el mensaje es un batch
+- "2" -> indica que la agencia no tiene mas batches para enviar
+- "3" -> indica que el cliente esta consultando por los ganadores
 
-El mensaje de apuesta tiene los sigueintes campos:
+Un batch esta conformado por, además del tipo de mensaje, un campo de 4 Bytes que indica la cantidad de apuestas en el batch.
+
+Luego, cada apuesta tiene el siguiente formato:
 
 | largo_nombre | nombre | largo_apellido | apellido | documento | fecha_nacimiento | numero |
 |      2B      |   23B  |       2B       |    10B   |     8B    |       10B        |   4B   |
@@ -209,9 +213,9 @@ El servidor va a responder con "OK\n" para confirmar que recibió un batch de fo
 En caso de que haya un error al recibir un batch, el servidor va a responder con "E\n" y cierra la conexión con el cliente
 
 
-El cliente para poder consultar la lista de ganadores, debe enviar "{ID_cliente}3" al servidor. Si todavía no se hizo el sorteo, el servidor responderá con "N\n", por lo que el cliente volverá a consultar más tarde
+Cuando el cliente consulta la lista de ganadores, si todavía no se hizo el sorteo, el servidor responderá con "N\n", por lo que el cliente tendrá que volver a consultar más tarde
 
-En el caso de que el servidor ya haya hecho el sorteo, este enviará "Y\n" y luego enviará los ganadores como:
+En el caso de que el servidor ya haya hecho el sorteo, este enviará "Y\n" indicando que puede recibir a los ganadores y luego enviará los ganadores como:
 
 {Documento Ganador}\n" 
 

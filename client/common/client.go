@@ -89,9 +89,12 @@ func (c *Client) StartClientLoop() {
 
 	for {
 
-		bets := get_bet_batch(fscanner, c.config.BatchSize)
-		log.Debugf("GOT BATCH, SENDING..")
-		// meto todo en un string unico?
+		bets, err := get_bet_batch(fscanner, c.config.BatchSize)
+		if err != nil {
+			log.Criticalf("Couldn get batch. Error:  %v", err)
+			c.conn.Close()
+			return
+		}
 		status := SendBetsBatch(c.conn, bets)
 		if status == -1 {
 			//if the socket was closed, return
@@ -113,8 +116,10 @@ func (c *Client) StartClientLoop() {
 			c.config.ID,
 			msg,
 		)
-		if msg != "OK\n" {
+		if msg != BATCH_RECEIVED_SUCCESS {
 			log.Errorf("action: send_batch | result: fail | client_id: %v", c.config.ID)
+			c.conn.Close()
+			return
 		}
 
 		if len(bets) < c.config.BatchSize {
@@ -130,18 +135,14 @@ func (c *Client) StartClientLoop() {
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-	//c.conn.Close()
-
 	c.GetWinners()
 }
 
 func (c *Client) GetWinners() {
 
 	for !c.stop {
-		//c.createClientSocket()
 		reader := bufio.NewReader(c.conn)
 		AskForWinnersToServer(c.conn)
-		log.Debugf("Esperando por ganadores...")
 		msg, err := reader.ReadString('\n')
 		if err != nil {
 			if c.stop {
@@ -154,10 +155,10 @@ func (c *Client) GetWinners() {
 			break
 		}
 		switch msg {
-		case "N\n":
-			log.Debugf("Todavía no se realizó el sorteo")
+		case RAFFLE_PENDING:
+			log.Debugf("Raffle not ready")
 			time.Sleep(c.config.LoopPeriod)
-		case "Y\n":
+		case RAFFLE_READY:
 			cant_ganadores := ObtainWinnersAmount(reader)
 			if cant_ganadores == -1 {
 				log.Errorf("Error while receiving winners")

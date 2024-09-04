@@ -14,11 +14,11 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self.agencias_terminaron = Value('i', 0)#indica cuantas agencias terminaron su envio
+        self.agencias_terminaron = Value('i', 0)
         self.file_lock = Lock() 
         self.manager = Manager()
         self.winners = self.manager.list()
-        self.sorteo_realizado =  Value('i', 0)#False
+        self.sorteo_realizado =  Value('i', 0) #used as a bool
         self._got_close_signal = False
         self._clients_handles = []
         self.clients = []

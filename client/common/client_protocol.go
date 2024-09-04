@@ -12,7 +12,7 @@ func SendId(conn net.Conn, id string) int {
 }
 
 func AskForWinnersToServer(conn net.Conn) int {
-	return send_message(conn, "3")
+	return send_message(conn, ASK_FOR_WINNERS)
 }
 
 func SendBetsBatch(conn net.Conn, bets []Bet) int {
@@ -25,14 +25,12 @@ func SendBetsBatch(conn net.Conn, bets []Bet) int {
 	}
 
 	batch := strings.Join(buf, "")
-	msg := fmt.Sprintf("%s%04d%s", "0", len(bets), batch) // le agrego el código al batch
-	log.Debugf("Ya parsie, ahora envio")
+	msg := fmt.Sprintf("%s%04d%s", BATCH_MESSAGE_CODE, len(bets), batch) // le agrego el código al batch
 	return send_message(conn, msg)
 }
 
 func SendAllBetsSent(conn net.Conn) int {
-	all_bets_sent_code := "2"
-	return send_message(conn, all_bets_sent_code)
+	return send_message(conn, ALL_BETS_SENT_CODE)
 }
 
 func send_message(conn net.Conn, msg string) int {
@@ -59,7 +57,7 @@ func ObtainWinnersAmount(reader *bufio.Reader) int {
 		if err != nil {
 			return -1
 		}
-		if msg == "FIN\n" {
+		if msg == ALL_WINNERS_SENT {
 			break
 		}
 		ganadores += 1

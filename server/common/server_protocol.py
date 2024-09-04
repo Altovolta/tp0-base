@@ -43,6 +43,10 @@ class ServerProtocol:
         
         return msg
     
+    """
+    Receives the message code through the socket.
+    It returns None if the connection was closed
+    """
     def receive_message_code(self):
         return self.recv_bytes(1)
 
@@ -55,7 +59,7 @@ class ServerProtocol:
         bytes_to_recv = 59
         msg = self.recv_bytes(bytes_to_recv)
         if msg is None:
-            return
+            return None
         
         addr = self.client_sock.getpeername()
         logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
@@ -63,20 +67,31 @@ class ServerProtocol:
         bet = utils.process_bet_message(client_id, msg)
         return bet
 
+    """
+    Sends that the raffle is still pending through the socket.
+    It returns 0 if there was an error while sending
+    """
     def send_raffle_pending(self):
         return self.send_all("N\n")
 
+    """
+    Sends that the raffle is ready through the socket.
+    It returns 0 if there was an error while sending
+    """
     def send_raffle_ready(self):
         return self.send_all("Y\n")
     
+    """
+    Sends the raffle winners through the socket.
+    It returns 0 if there was an error while sending
+    """
     def send_winners(self, winners):
-
         status = self.send_raffle_ready()
-        if status == -1:
-            logging.critical("Error while sending winners")
-            return
+        if status == 0:
+            return 0
         for winner in winners:
             msg = winner.document + "\n"
-            self.send_all(msg) #chequear errores
+            if self.send_all(msg) == 0:
+                return 0
 
         return self.send_all("FIN\n")

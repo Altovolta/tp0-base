@@ -24,8 +24,8 @@ class ClientHandler:
         try:
 
             while True: 
-                msg = self.protocol.recv_bytes(1)
-                if msg is None: #se desconecto el cliente
+                msg = self.protocol.receive_message_code()
+                if msg is None: #sclient disconnected
                     return
                 
                 if msg == BET_MESSAGE_CODE:
@@ -35,8 +35,12 @@ class ClientHandler:
                 elif msg == ALL_BETS_SENT_CODE: 
                     self.handle_all_bets_sent_message()
                 elif msg == ASK_FOR_WINNERS:
-                    if self.handle_winners_request_message():
-                        # ya envié los ganadores, entonces cierro la conexión
+                    status = self.handle_winners_request_message()
+                    if  status is None:
+                        logging.error("Failed to send winners")        
+                        break
+                    elif status:
+                        #if i already sent the winners, the connection is closed
                         break
 
         except ValueError as e:
@@ -47,12 +51,21 @@ class ClientHandler:
         finally:
             self.protocol.close()
 
+
+    """
+    Stops the client handler execution and closes the connection socket
+    """
     def stop(self):
+        logging.debug(f"Closing connection for client {self.client_id}")
         self.protocol.close()
 
     def handle_bet_message(self):
         bet = self.protocol.receive_bet_message(self.client_id)
+        if bet is None:
+            logging.error("Error while receiving the bet")
+            return False
         self.bets.append(bet)
+        return True
 
     def handle_batch_end_message(self):
         with self.file_lock:
@@ -67,21 +80,21 @@ class ClientHandler:
             self.agencias_terminaron.value += 1
             if self.agencias_terminaron.value < AMOUNT_OF_CLIENTS:
                 return
-        # Si es el último en terminar de enviar las apuestas, realiza el sorteo
+        # if its the last one to send all the bets, it loads the winners
         self.get_winners()
-        #indico que se realizo el sorteo
         with self.sorteo_realizado.get_lock():
             self.sorteo_realizado.value = True
         
         logging.info("action: sorteo | result: success")
 
-    def handle_winners_request_message(self): #devuelvo true o false para saber si ya lo envié y si salgo?
+    def handle_winners_request_message(self):
         with self.sorteo_realizado.get_lock():
             if self.sorteo_realizado.value == False:
                 self.protocol.send_raffle_pending()
                 return False
         client_winners = self.get_my_winners()
-        self.protocol.send_winners(client_winners)
+        if self.protocol.send_winners(client_winners) == 0:
+            return None
         return True
     
     def get_winners(self):

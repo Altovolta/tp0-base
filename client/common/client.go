@@ -139,9 +139,12 @@ func (c *Client) GetWinners() {
 		//c.createClientSocket()
 		reader := bufio.NewReader(c.conn)
 		AskForWinnersToServer(c.conn, c.config.ID)
-
+		log.Debugf("Esperando por ganadores...")
 		msg, err := reader.ReadString('\n')
 		if err != nil {
+			if c.stop {
+				return
+			}
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,

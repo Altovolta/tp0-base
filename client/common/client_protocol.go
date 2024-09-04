@@ -11,8 +11,7 @@ func SendId(conn net.Conn, id string) int {
 }
 
 func AskForWinnersToServer(conn net.Conn, id string) int {
-	msg := fmt.Sprintf("%s3", id)
-	return send_message(conn, msg)
+	return send_message(conn, "3")
 }
 
 func SendBetsBatch(conn net.Conn, bets []Bet) int {

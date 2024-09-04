@@ -128,7 +128,7 @@ func (c *Client) StartClientLoop() {
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-	c.conn.Close()
+	//c.conn.Close()
 
 	c.GetWinners()
 }
@@ -136,7 +136,7 @@ func (c *Client) StartClientLoop() {
 func (c *Client) GetWinners() {
 
 	for !c.stop {
-		c.createClientSocket()
+		//c.createClientSocket()
 		reader := bufio.NewReader(c.conn)
 		AskForWinnersToServer(c.conn, c.config.ID)
 
@@ -152,7 +152,6 @@ func (c *Client) GetWinners() {
 		case "N\n":
 			log.Debugf("Todavía no se realizó el sorteo")
 			time.Sleep(c.config.LoopPeriod)
-			c.conn.Close()
 		case "Y\n":
 			cant_ganadores := ObtainWinnersAmount(reader)
 			if cant_ganadores == -1 {

@@ -26,6 +26,7 @@ type ClientConfig struct {
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
+	stop   bool
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -33,6 +34,7 @@ type Client struct {
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
+		stop:   false,
 	}
 	return client
 }
@@ -71,6 +73,7 @@ func (c *Client) StartClientLoop() {
 	go func() {
 		sig := <-sig_channel
 		log.Debugf("signal received | signal: %s", sig)
+		c.stop = true
 		file.Close()
 		c.conn.Close()
 		log.Debugf("Closing file and socket connection")
@@ -87,6 +90,9 @@ func (c *Client) StartClientLoop() {
 
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		if err != nil {
+			if c.stop {
+				return
+			}
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,

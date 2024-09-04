@@ -4,7 +4,9 @@ import logging
 import signal
 from . import server_protocol as pr, utils
 
-BETS_PER_BATCH = 5 #borrar
+BET_MESSAGE_CODE = "0"
+BATCH_END_CODE = "1"
+ALL_BETS_SENT_CODE = "2"
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -42,32 +44,33 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
+        protocol = pr.ServerProtocol(client_sock)
         bets = []
         try:   
             while True:
                 
-                msg = pr.recv_header(client_sock)
+                msg = protocol.receive_message_code()
                 if msg is None: #se desconecto el cliente
                     break
                 
-                if msg == pr.BET_MESSAGE_CODE:
-                    bet = pr.receive_bet_message(client_sock)
+                if msg == BET_MESSAGE_CODE:
+                    bet = protocol.receive_bet_message()
                     bets.append(bet)
-                elif msg == pr.BATCH_END_CODE:
+                elif msg == BATCH_END_CODE:
                     utils.store_bets(bets)
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                     bets = []
-                    pr.send_all(client_sock, "OK\n")
-                elif msg == pr.ALL_BETS_SENT_CODE:
+                    protocol.send_all("OK\n")
+                elif msg == ALL_BETS_SENT_CODE:
                     logging.debug("ALL BETS WERE RECEIVED")
                     break
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
-            pr.send_all(client_sock, "E\n")
+            protocol.send_all("E\n")
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
-            client_sock.close()
+            protocol.close()
 
     def __accept_new_connection(self):
         """

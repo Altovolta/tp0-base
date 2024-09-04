@@ -32,9 +32,9 @@ func NewBet(nombre string, apellido string, dni string, nacimiento string, num s
 
 func (bet *Bet) ParseBet() string {
 	client_id := os.Getenv("CLI_ID")
-	mensaje := fmt.Sprintf("%s%02d%-23s%02d%-10s%08d%s%04d",
-		client_id, len(bet.NOMBRE), bet.NOMBRE, len(bet.APELLIDO), bet.APELLIDO,
-		bet.DOCUMENTO, bet.NACIMIENTO, bet.NUMERO,
+	mensaje := fmt.Sprintf("%s%02d%-23v%02d%-10v%08d%s%04d",
+		client_id, len(bet.NOMBRE), bet.NOMBRE, len(bet.APELLIDO),
+		bet.APELLIDO, bet.DOCUMENTO, bet.NACIMIENTO, bet.NUMERO,
 	)
 	return mensaje
 

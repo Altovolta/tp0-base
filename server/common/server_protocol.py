@@ -65,7 +65,7 @@ class ServerProtocol:
             return
         
         addr = self.client_sock.getpeername()
-        logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+        logging.debug(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
         bet = utils.process_bet_message(client_id, msg)
         return bet

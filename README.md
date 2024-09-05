@@ -178,3 +178,23 @@ Cada ejercicio deberá resolverse en una rama independiente con nombres siguiend
 Puden obtener un listado del último commit de cada rama ejecutando `git ls-remote`.
 
 Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+
+# Ejecución del ejercicio
+
+## Ejercicio 2
+
+Para poder probar el funcionamiento de los volúmenes, primero se debe ejecutar:
+
+```bash
+make docker-compose-up
+```
+Este comando lo que hace es buildear las imágenes y levantar los contenedores
+
+Luego, si se modifica algo en config.yaml, ya no va a hacer falta volver a buildear las imágenes, pero se debe levantar los contenedores nuevamente.
+Para esto, se deben ejecuar los siguientes comandos:
+
+```bash
+# para eliminar los contenedores
+make docker-compose-down
+```

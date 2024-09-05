@@ -28,6 +28,7 @@ func NewBet() *Bet {
 	return bet
 }
 
+// Return the string representation of the bet, including name and surname length
 func (bet *Bet) ParseBet() string {
 	client_id := os.Getenv("CLI_ID")
 	mensaje := fmt.Sprintf("%s%02d%-23s%02d%-10s%08d%s%02d",

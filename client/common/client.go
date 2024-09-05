@@ -70,13 +70,17 @@ func (c *Client) StartClientLoop() {
 	c.createClientSocket()
 
 	bet := NewBet()
-	status := SendBet(c, bet)
+	_, err := SendBet(c.conn, bet)
 
-	if status != 0 {
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
 		c.conn.Close()
 		return
 	}
-	_, err := bufio.NewReader(c.conn).ReadString('\n')
+	_, err = bufio.NewReader(c.conn).ReadString('\n')
 
 	c.conn.Close()
 

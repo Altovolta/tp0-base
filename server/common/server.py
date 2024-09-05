@@ -2,8 +2,9 @@ import socket
 import logging
 
 import signal
-from . import utils, comunication as com
-
+from . import utils
+from common.comunication import *
+from common.constants import *
 class Server:
     def __init__(self, port, listen_backlog):
         # Initialize server socket
@@ -23,15 +24,12 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
         while True:  
             client_sock = self.__accept_new_connection()
             if client_sock is None:
                 break
             self.__handle_client_connection(client_sock)
 
-            
 
     def __handle_client_connection(self, client_sock):
         """
@@ -40,10 +38,11 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
+        protocol = ServerProtocol(client_sock)
         try:
-            msg = com.receive_message(client_sock)
+            msg = protocol.receive_message()
             if msg is None: 
-                client_sock.close()
+                protocol.close()
                 return 
 
             bet = self.process_message(msg)
@@ -53,12 +52,12 @@ class Server:
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
-            com.send_all(client_sock, "OK\n")
+            protocol.send_all(BET_RECEIVED_SUCCESS)
 
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
-            client_sock.close()
+            protocol.close()
 
     def __accept_new_connection(self):
         """
@@ -93,7 +92,5 @@ class Server:
         dni = msg[38:46]
         fecha_nac = msg[46:56]
         numero = msg[56:]
-
-        #logging.debug(f"id: {id_agencia} | n_len: {name_len} | name: {name} | a_len: {apellido_len} | apell: {apellido} | dni: {dni} | nac: {fecha_nac} | num: {numero}")
 
         return utils.Bet(id_agencia, name, apellido, dni, fecha_nac, numero)

@@ -49,10 +49,10 @@ def load_bets() -> list[Bet]:
         for row in reader:
             yield Bet(row[0], row[1], row[2], row[3], row[4], row[5])
 
-"""
-Parse string message to a Bet
-"""
 def process_bet_message(client_id, msg):
+    """
+    Parse string message to a Bet
+    """
     name_len = int(msg[0:2])
     name = msg[2:2 + name_len]
     apellido_len = int(msg[25:27])
@@ -62,10 +62,10 @@ def process_bet_message(client_id, msg):
     numero = msg[55:]
     return Bet(client_id, name, apellido, dni, fecha_nac, numero)
 
-"""
-Returns the bets that won the raffle for a client_id
-"""
 def get_winners(client_id) -> list[Bet]:
+    """
+    Returns the bets that won the raffle for a client_id
+    """
     winners = []
     bets = load_bets()
 

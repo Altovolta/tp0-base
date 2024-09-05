@@ -32,11 +32,6 @@ class Server:
             if client_sock is None:
                 break
             self.__handle_client_connection(client_sock)
-
-            # if self.agencias_terminaron == NUM_DE_AGENCIAS:
-            #     self.agencias_terminaron = 0
-            #     logging.info("action: sorteo | result: success")
-            #     self.__realizar_sorteo()
   
     def __handle_client_connection(self, client_sock):
         """
@@ -60,16 +55,10 @@ class Server:
                         break
                 elif msg_code == ALL_BETS_SENT_CODE:
                     self.handle_all_bets_sent_message()
-                    #logging.debug(f"All bets from client {client_id} were received")
-                    #self.client_finished()
+
                     break
                 elif msg_code == ASK_FOR_WINNERS:
                     self.handle_winners_request_message(protocol, client_id)
-                    # if not self.sorteo_realizado:
-                    #     protocol.send_raffle_pending()
-                    #     break
-                    # protocol.send_winners(client_id)
-                    # break
 
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
@@ -96,21 +85,17 @@ class Server:
         except OSError as e:
             if not self._got_close_signal:
                 logging.critical(f"action: accept_connections | result: fail | error: {e}")
-
-    
-    # def client_finished(self):
-    #     self.agencias_terminaron += 1
-    #     if self.agencias_terminaron == AMOUNT_OF_CLIENTS:
-    #         self.sorteo_realizado = True
-    #         logging.info("action: sorteo | result: success")
         
     def sigterm_handler(self, signal, frame):
         logging.debug("Server socket closed")
         self._server_socket.close()
         self._got_close_signal = True
 
-###########################################################
+
     def handle_batch_message(self, protocol:ServerProtocol, client_id):
+        """
+        Handler that receives the batch of bets and stores them
+        """
         bets = protocol.receive_batch(client_id)
         if bets is None:
             return
@@ -119,16 +104,25 @@ class Server:
         if protocol.send_all(BATCH_RECEIVED_SUCCESS) == 0:
             return None
         return True
-
+    
+    
     def handle_all_bets_sent_message(self):
-
+        """
+        Handler that manages ALL_BETS_SENT command.
+        If the number of agencies that sent all of its batches is the maximun amount,
+        it obtains the raffle winners
+        """
         self.agencias_terminaron += 1
         if self.agencias_terminaron == AMOUNT_OF_CLIENTS:
-            #obtengo los ganadores aca?
             self.sorteo_realizado = True
             logging.info("action: sorteo | result: success")
 
+   
     def handle_winners_request_message(self, protocol:ServerProtocol, client_id):
+        """
+        Handles the ASK_FOR_WINNERS command. If the draw was made, it send the 
+        winners of an agency to the client
+        """
         if not self.sorteo_realizado:
             protocol.send_raffle_pending()
             return False

@@ -4,47 +4,48 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"strings"
 )
 
-func SendId(conn net.Conn, id string) int {
+// Send the id through the socket. It guarantees that there are not short writes
+// It returns the numbers of bytes send and error if it fails
+func SendId(conn net.Conn, id string) (int, error) {
 	return send_message(conn, id)
 }
 
-func AskForWinnersToServer(conn net.Conn, id string) int {
-	msg := fmt.Sprintf("%s3", id)
+// Sends a message through the socket asking for the raflle's winners
+// It returns the numbers of bytes send and error if it fails
+func AskForWinnersToServer(conn net.Conn, id string) (int, error) {
+	msg := fmt.Sprintf("%s%s", id, ASK_FOR_WINNERS)
 	return send_message(conn, msg)
 }
 
-func SendBetsBatch(conn net.Conn, bets []Bet) int {
+// Receives an array of Bets and sends them in one batch through the socket
+// It returns the numbers of bytes send and error if it fails
+func SendBetsBatch(conn net.Conn, bets []Bet) (int, error) {
+
+	var buf []string
 
 	for _, bet := range bets {
-		res := SendBet(conn, &bet)
-
-		if res == -1 {
-			return -1
-		}
+		parsed_bet := bet.ParseBet()
+		buf = append(buf, parsed_bet)
 	}
-	return SendBatchEnd(conn)
+
+	batch := strings.Join(buf, "")
+	msg := fmt.Sprintf("%s%04d%s", BATCH_MESSAGE_CODE, len(bets), batch)
+	return send_message(conn, msg)
+
 }
 
-func SendBet(conn net.Conn, bet *Bet) int {
-	bet_msg_code := "0"
-	bet_string := bet.ParseBet()
-	mensaje := fmt.Sprintf("%s%s", bet_msg_code, bet_string)
-	return send_message(conn, mensaje)
+// Send through the socket that there are no more bets to send
+// It returns the numbers of bytes send and error if it fails
+func SendAllBetsSent(conn net.Conn) (int, error) {
+	return send_message(conn, ALL_BETS_SENT_CODE)
 }
 
-func SendBatchEnd(conn net.Conn) int {
-	batch_end_code := "1"
-	return send_message(conn, batch_end_code)
-}
-
-func SendAllBetsSent(conn net.Conn) int {
-	all_bets_sent_code := "2"
-	return send_message(conn, all_bets_sent_code)
-}
-
-func send_message(conn net.Conn, msg string) int {
+// Sends a message through the socket. It guarantees that there are not short writes
+// It returns the numbers of bytes send and error if it fails
+func send_message(conn net.Conn, msg string) (int, error) {
 	bytes_to_send := len(msg)
 	bytes_sent := 0
 
@@ -53,27 +54,29 @@ func send_message(conn net.Conn, msg string) int {
 		n, err := conn.Write([]byte(msg[bytes_sent:]))
 		if err != nil {
 			// the socket was closed
-			return -1
+			return -1, err
 		}
 		bytes_sent += n
 	}
-	return 0
+	return 0, nil
 }
 
-func ObtainWinnersAmount(reader *bufio.Reader) int {
+// Gets the winners from the reader and returns the amount of winners received
+// It returns the numbers of bytes send and error if it fails
+func ObtainWinnersAmount(reader *bufio.Reader) (int, error) {
 
 	ganadores := 0
 	for {
 		msg, err := reader.ReadString('\n')
 		if err != nil {
-			return -1
+			return 0, err
 		}
-		if msg == "FIN\n" {
+		if msg == ALL_WINNERS_SENT {
 			break
 		}
 		ganadores += 1
 
 	}
-	return ganadores
+	return ganadores, nil
 
 }

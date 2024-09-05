@@ -1,10 +1,8 @@
 package common
 
 import (
-	"bufio"
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 type Bet struct {
@@ -15,9 +13,14 @@ type Bet struct {
 	NUMERO     int
 }
 
-func NewBet(nombre string, apellido string, dni string, nacimiento string, num string) *Bet {
-	documento, _ := strconv.Atoi(dni)
-	numero, _ := strconv.Atoi(num)
+func NewBet(nombre string, apellido string, dni string, nacimiento string, num string) (*Bet, error) {
+	documento, err := strconv.Atoi(dni)
+	numero, err2 := strconv.Atoi(num)
+
+	if err != nil || err2 != nil {
+
+		return nil, err
+	}
 
 	bet := &Bet{
 		NOMBRE:     nombre,
@@ -26,9 +29,10 @@ func NewBet(nombre string, apellido string, dni string, nacimiento string, num s
 		NACIMIENTO: nacimiento,
 		NUMERO:     numero,
 	}
-	return bet
+	return bet, nil
 }
 
+// Return the string representation of the bet, including name and surname length
 func (bet *Bet) ParseBet() string {
 	mensaje := fmt.Sprintf("%02d%-23s%02d%-10s%08d%s%04d",
 		len(bet.NOMBRE), bet.NOMBRE, len(bet.APELLIDO), bet.APELLIDO,
@@ -36,24 +40,4 @@ func (bet *Bet) ParseBet() string {
 	)
 	return mensaje
 
-}
-
-func get_bet_batch(fscanner *bufio.Scanner, batch_size int) []Bet {
-	var bets []Bet
-	bets_loaded := 0
-	for fscanner.Scan() {
-
-		line := fscanner.Text()
-		bet_params := strings.Split(line, ",")
-
-		bet := NewBet(bet_params[0], bet_params[1], bet_params[2], bet_params[3], bet_params[4])
-		bets = append(bets, *bet)
-
-		bets_loaded += 1
-		if bets_loaded >= batch_size {
-			break
-		}
-	}
-
-	return bets
 }

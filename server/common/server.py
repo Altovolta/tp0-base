@@ -2,13 +2,11 @@ import socket
 import logging
 
 import signal
-from . import server_protocol as pr, utils
+from . import utils
+from common.constants import *
+from common.server_protocol import *
 
-NUM_DE_AGENCIAS = 5 #ponerlos en env var?
-BET_MESSAGE_CODE = "0"
-BATCH_END_CODE = "1"
-ALL_BETS_SENT_CODE = "2"
-ASK_FOR_WINNERS = "3"
+
 class Server:
     def __init__(self, port, listen_backlog):
         # Initialize server socket
@@ -47,35 +45,31 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
-        protocol = pr.ServerProtocol(client_sock)
+        protocol = ServerProtocol(client_sock)
         bets = []
         try:
             client_id = protocol.recv_bytes(1)
-            logging.debug(f"CLIENT {client_id} connected")
 
             while True: 
                 msg_code = protocol.receive_message_code()
-                if msg_code is None: #se desconecto el cliente
+                if msg_code is None: #client disconnected
                     break
                 
-                if msg_code == BET_MESSAGE_CODE:
-                    bet = protocol.receive_bet_message(client_id)
-                    bets.append(bet)
-                elif msg_code == BATCH_END_CODE:
-                    utils.store_bets(bets)
-                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                    bets = []
-                    protocol.send_all("OK\n")
+                if msg_code == BATCH_MESSAGE_CODE:
+                    if self.handle_batch_message(protocol, client_id) is None:
+                        break
                 elif msg_code == ALL_BETS_SENT_CODE:
-                    logging.debug(f"All bets from client {client_id} were received")
-                    self.client_finished()
+                    self.handle_all_bets_sent_message()
+                    #logging.debug(f"All bets from client {client_id} were received")
+                    #self.client_finished()
                     break
                 elif msg_code == ASK_FOR_WINNERS:
-                    if not self.sorteo_realizado:
-                        protocol.send_raffle_pending()
-                        break
-                    protocol.send_winners(client_id)
-                    break
+                    self.handle_winners_request_message(protocol, client_id)
+                    # if not self.sorteo_realizado:
+                    #     protocol.send_raffle_pending()
+                    #     break
+                    # protocol.send_winners(client_id)
+                    # break
 
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
@@ -104,15 +98,41 @@ class Server:
                 logging.critical(f"action: accept_connections | result: fail | error: {e}")
 
     
-    def client_finished(self):
-        self.agencias_terminaron += 1
-        if self.agencias_terminaron == NUM_DE_AGENCIAS:
-            self.sorteo_realizado = True
-            logging.info("action: sorteo | result: success")
+    # def client_finished(self):
+    #     self.agencias_terminaron += 1
+    #     if self.agencias_terminaron == AMOUNT_OF_CLIENTS:
+    #         self.sorteo_realizado = True
+    #         logging.info("action: sorteo | result: success")
         
     def sigterm_handler(self, signal, frame):
         logging.debug("Server socket closed")
         self._server_socket.close()
         self._got_close_signal = True
 
+###########################################################
+    def handle_batch_message(self, protocol:ServerProtocol, client_id):
+        bets = protocol.receive_batch(client_id)
+        if bets is None:
+            return
+        logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+        utils.store_bets(bets)
+        if protocol.send_all(BATCH_RECEIVED_SUCCESS) == 0:
+            return None
+        return True
 
+    def handle_all_bets_sent_message(self):
+
+        self.agencias_terminaron += 1
+        if self.agencias_terminaron == AMOUNT_OF_CLIENTS:
+            #obtengo los ganadores aca?
+            self.sorteo_realizado = True
+            logging.info("action: sorteo | result: success")
+
+    def handle_winners_request_message(self, protocol:ServerProtocol, client_id):
+        if not self.sorteo_realizado:
+            protocol.send_raffle_pending()
+            return False
+        
+        winners = utils.get_winners(client_id)
+        protocol.send_winners(winners)
+        return True

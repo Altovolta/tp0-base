@@ -1,5 +1,6 @@
 from . import utils
 import logging
+from common.constants import *
 
 class ServerProtocol:
 
@@ -43,6 +44,10 @@ class ServerProtocol:
         
         return msg
     
+    """
+    Receives the message code through the socket.
+    It returns None if the connection was closed
+    """
     def receive_message_code(self):
         return self.recv_bytes(1)
 
@@ -52,7 +57,7 @@ class ServerProtocol:
     On success, it returns the bet
     """
     def receive_bet_message(self, client_id):
-        bytes_to_recv = 59
+        bytes_to_recv = BET_LEN
         msg = self.recv_bytes(bytes_to_recv)
         if msg is None:
             return
@@ -62,24 +67,48 @@ class ServerProtocol:
 
         bet = utils.process_bet_message(client_id, msg)
         return bet
-
-    def send_raffle_pending(self):
-        return self.send_all("N\n")
-
-    def send_raffle_ready(self):
-        return self.send_all("Y\n")
     
-    def send_winners(self, client_id):
+    """
+    Its receives a batch from the client. If there is a problem while receiveng, it returs false
+    Otherwise, it return all the bets yaht were in the batch
+    """
+    def receive_batch(self, client_id):
 
+        num_of_bets = self.recv_bytes(AMOUNT_OF_BETS_IN_BATCH_LEN)
+        bets = []
+        for _ in range (0, int(num_of_bets)):
+            bet = self.receive_bet_message(client_id)
+            if bet is None:
+                return None
+            bets.append(bet)
+        return bets
+    
+
+    """
+    Sends that the raffle is still pending through the socket.
+    It returns 0 if there was an error while sending
+    """
+    def send_raffle_pending(self):
+        return self.send_all(RAFFLE_PENDING)
+    
+    """
+    Sends that the raffle is ready through the socket.
+    It returns 0 if there was an error while sending
+    """
+    def send_raffle_ready(self):
+        return self.send_all(RAFFLE_READY)
+    
+    """
+    Sends the raffle winners through the socket.
+    It returns 0 if there was an error while sending
+    """
+    def send_winners(self, winners):
         status = self.send_raffle_ready()
-        if status == -1:
-            logging.critical("Error while sending winners")
-            return
-
-        winners = utils.get_winners(client_id)
+        if status == 0:
+            return 0
         for winner in winners:
-            logging.debug(f"Sending winner {winner.document} to client {client_id}")
             msg = winner.document + "\n"
-            self.send_all(msg)
+            if self.send_all(msg) == 0:
+                return 0
 
-        return self.send_all("FIN\n")
+        return self.send_all(ALL_WINNERS_SENT)

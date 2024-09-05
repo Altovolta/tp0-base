@@ -78,9 +78,11 @@ func (c *Client) StartClientLoop() {
 		log.Debugf("Closing file and socket connection")
 	}()
 
-	status := SendId(c.conn, c.config.ID)
-	if status == -1 {
-		//socket was closed
+	_, err := SendId(c.conn, c.config.ID)
+	if err != nil {
+		process_error(err, c.stop, c.config.ID)
+		c.conn.Close()
+		log.Debugf("Closing socket connection")
 		return
 	}
 
@@ -89,35 +91,45 @@ func (c *Client) StartClientLoop() {
 
 	for {
 
-		bets := get_bet_batch(fscanner, c.config.BatchSize)
-		status := SendBetsBatch(c.conn, bets)
-		if status == -1 {
-			//if the socket was closed, return
+		bets, err := get_bet_batch(fscanner, c.config.BatchSize)
+		if err != nil {
+			log.Criticalf("Couldn get batch. Error:  %v", err)
+			c.conn.Close()
+			log.Debugf("Closing socket connection")
+			return
+		}
+		_, err = SendBetsBatch(c.conn, bets)
+		if err != nil {
+			process_error(err, c.stop, c.config.ID)
+			c.conn.Close()
+			log.Debugf("Closing socket connection")
 			return
 		}
 
 		msg, err := reader.ReadString('\n')
 		if err != nil {
-			if c.stop {
-				return
-			}
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
+			process_error(err, c.stop, c.config.ID)
+			c.conn.Close()
+			log.Debugf("Closing socket connection")
 			return
 		}
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
 			c.config.ID,
 			msg,
 		)
-		if msg != "OK\n" {
+		if msg != BATCH_RECEIVED_SUCCESS {
 			log.Errorf("action: send_batch | result: fail | client_id: %v", c.config.ID)
+			c.conn.Close()
+			log.Debugf("Closing socket connection")
+			return
 		}
 
 		if len(bets) < c.config.BatchSize {
-			result := SendAllBetsSent(c.conn)
-			if result == -1 {
+			_, err := SendAllBetsSent(c.conn)
+			if err != nil {
+				process_error(err, c.stop, c.config.ID)
+				c.conn.Close()
+				log.Debugf("Closing socket connection")
 				return
 			}
 			break
@@ -142,24 +154,28 @@ func (c *Client) GetWinners() {
 
 		msg, err := reader.ReadString('\n')
 		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			break
+			process_error(err, c.stop, c.config.ID)
+			c.conn.Close()
+			log.Debugf("Closing socket connection")
+			return
 		}
 		switch msg {
-		case "N\n":
-			log.Debugf("Todavía no se realizó el sorteo")
+		case RAFFLE_PENDING:
+			log.Debugf("Raffle not ready")
 			time.Sleep(c.config.LoopPeriod)
 			c.conn.Close()
-		case "Y\n":
-			cant_ganadores := ObtainWinnersAmount(reader)
-			if cant_ganadores == -1 {
+		case RAFFLE_READY:
+			cant_ganadores, err := ObtainWinnersAmount(reader)
+			if err != nil {
 				log.Errorf("Error while receiving winners")
+				c.conn.Close()
+				log.Debugf("Closing socket connection")
+				return
 			}
+
 			log.Debugf("action: consulta_ganadores | result: success | cant_ganadores: %v", cant_ganadores)
 			c.conn.Close()
+			log.Debugf("Closing socket connection")
 			return
 		}
 

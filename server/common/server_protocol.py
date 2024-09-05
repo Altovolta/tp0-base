@@ -1,4 +1,5 @@
 from . import utils
+from common.constants import *
 import logging
 
 class ServerProtocol:
@@ -35,7 +36,6 @@ class ServerProtocol:
         while bytes_to_recv > 0:
 
             buf = self.client_sock.recv(bytes_to_recv).rstrip().decode('utf-8')
-            logging.debug(f"ESTOY LEYENDO: {buf} y SU LEN ES {len(buf)}")
             if len(buf) == 0: # client disconnected
                 return None
 
@@ -44,6 +44,10 @@ class ServerProtocol:
         
         return msg
     
+    """
+    Receives the message code through the socket.
+    It returns None if the connection was closed
+    """
     def receive_message_code(self):
         return self.recv_bytes(1)
     
@@ -52,8 +56,8 @@ class ServerProtocol:
     when receiving the message.
     On success, it returns the bet
     """
-    def receive_bet_message(self):
-        bytes_to_recv = 60
+    def receive_bet_message(self, client_id):
+        bytes_to_recv = BET_LEN
         msg = self.recv_bytes(bytes_to_recv)
         if msg is None:
             return
@@ -61,5 +65,20 @@ class ServerProtocol:
         addr = self.client_sock.getpeername()
         logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
-        bet = utils.process_bet_message(msg)
+        bet = utils.process_bet_message(client_id, msg)
         return bet
+    
+    """
+    Its receives a batch from the client. If there is a problem while receiveng, it returs false
+    Otherwise, it return all the bets yaht were in the batch
+    """
+    def receive_batch(self, client_id):
+
+        num_of_bets = self.recv_bytes(AMOUNT_OF_BETS_IN_BATCH_LEN)
+        bets = []
+        for _ in range (0, int(num_of_bets)):
+            bet = self.receive_bet_message(client_id)
+            if bet is None:
+                return None
+            bets.append(bet)
+        return bets

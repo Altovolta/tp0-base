@@ -66,6 +66,8 @@ func (c *Client) StartClientLoop() {
 		log.Criticalf("hubo un error: %s", erro)
 		return
 	}
+	defer file.Close()
+
 	c.createClientSocket()
 
 	fscanner := bufio.NewScanner(file)
@@ -74,42 +76,61 @@ func (c *Client) StartClientLoop() {
 		sig := <-sig_channel
 		log.Debugf("signal received | signal: %s", sig)
 		c.stop = true
-		file.Close()
 		c.conn.Close()
 		log.Debugf("Closing file and socket connection")
 	}()
 
+	_, err := SendId(c.conn, c.config.ID)
+	if err != nil {
+		process_error(err, c.stop, c.config.ID)
+		c.conn.Close()
+		log.Debugf("Closing socket connection")
+		return
+	}
+
 	for {
 
-		bets := get_bet_batch(fscanner, c.config.BatchSize)
-		status := SendBetsBatch(c, bets)
-		//if the socket was closed, return
-		if status == -1 {
+		bets, err := get_bet_batch(fscanner, c.config.BatchSize)
+		if err != nil {
+			log.Criticalf("Couldn get batch. Error:  %v", err)
+			c.conn.Close()
+			log.Debugf("Closing socket connection")
+			return
+		}
+		_, err = SendBetsBatch(c.conn, bets)
+		if err != nil {
+			process_error(err, c.stop, c.config.ID)
+			c.conn.Close()
+			log.Debugf("Closing socket connection")
 			return
 		}
 
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		if err != nil {
-			if c.stop {
-				return
-			}
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			break
+			process_error(err, c.stop, c.config.ID)
+			c.conn.Close()
+			log.Debugf("Closing socket connection")
+			return
 		}
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
 			c.config.ID,
 			msg,
 		)
-		if msg != "OK\n" {
+		if msg != BATCH_RECEIVED_SUCCESS {
 			log.Errorf("action: send_batch | result: fail | client_id: %v", c.config.ID)
 		}
 
 		if len(bets) < c.config.BatchSize {
-			SendAllBetsSent(c)
+			_, err := SendAllBetsSent(c.conn)
+			if err != nil {
+				process_error(err, c.stop, c.config.ID)
+				c.conn.Close()
+				log.Debugf("Closing socket connection")
+				return
+			}
 			break
+			// SendAllBetsSent(c)
+			// break
 		}
 
 		// Wait a time between sending one message and the next one
@@ -117,6 +138,6 @@ func (c *Client) StartClientLoop() {
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-	file.Close()
 	c.conn.Close()
+	log.Debugf("Closing socket connection")
 }

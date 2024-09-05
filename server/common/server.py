@@ -15,7 +15,7 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self.agencias_terminaron = 0
         self.sorteo_realizado = False
-        self.winners = {} #cambiar el 5
+        self.winners = {}
         self._got_close_signal = False
         signal.signal(signal.SIGTERM, self.sigterm_handler)
 

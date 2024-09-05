@@ -190,4 +190,4 @@ El cliente va a enviar el siguiente mensaje, de tamaño fijo, con los datos que 
 
 | nro_agencia (1B) | largo_nombre (2B) | nombre(23B) | largo_apellido (2B) | apellido (10B) | documento (8B) | fecha_nacimiento (10B) | numero (4B) |
 
-El servidor va a responder con "OK\n" para confirmar que recivió el mensaje 
+El servidor va a responder con "OK\n" para confirmar que recibió el mensaje 

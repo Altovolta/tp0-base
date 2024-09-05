@@ -182,19 +182,26 @@ Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los cri
 
 ## Ejecución del ejercicio
 
-### Ejercicio 3
-Para poder ejecutar el script que va a validar el funcionamiento del echo server, primero debe levantarse el servidor y la network usando
+### Ejercicio 4
+
+Para poder probar el funcionamiento de este ejercicio, se debe levantar los contenedores con 
 
 ```bash
 make docker-compose-up
 ```
 
-Una vez levantado el servidor, se ejecuta el script de la siguiente manera:
+Luego ejecutar, en otra ventana
 
 ```bash
-./validar-echo-server.sh 
+make docker-compose-logs
 ```
 
-Este script lo que hace es crear una imagen con el Dockerfile que se encuentra en la carpeta server_test, para luego crear un contenedor en donde ejecute la prueba utilizando esa imagen.
+Esto permite ver el log del programa
 
-Una vez se realizó la prueba, se elimina el contenedor usado
+Por último, para probar que funciona el graceful shutdown, ejecutar el siguiente comando
+
+```bash
+make docker-compose-down
+```
+
+Una vez ejecutado el comando, se podra ver en el log como se realiza el graceful shutdown.

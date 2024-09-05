@@ -10,10 +10,10 @@ class ClientHandler:
         self.protocol = protocol 
         self.bets = []
         self.client_id = client_id
-        self.file_lock = lock
-        self.agencias_terminaron = agencias_terminaron
-        self.winners = winners
-        self.sorteo_realizado = sorteo_realizado
+        self.file_lock = lock #shared lock
+        self.agencias_terminaron = agencias_terminaron #shared value
+        self.winners = winners #shared dict
+        self.sorteo_realizado = sorteo_realizado #shared value
 
     def run(self):
 
@@ -97,7 +97,8 @@ class ClientHandler:
             if self.sorteo_realizado.value == False:
                 self.protocol.send_raffle_pending()
                 return False
-        client_winners = self.get_my_winners()
+
+        client_winners = self.winners.get(self.client_id, [])
         if self.protocol.send_winners(client_winners) == 0:
             return None
         return True
@@ -106,25 +107,14 @@ class ClientHandler:
     Gets the winners from the storage and its saves it in self.winners array
     """
     def get_winners(self):
-        bets = []
+        bets_per_client = {}
         with self.file_lock:
-            bets = utils.load_bets()
+           bets_per_client = utils.get_winners()
 
-        for bet in bets:
-            if utils.has_won(bet):
-                self.winners.append(bet)
-    
-
-    """
-    Returns the winner bets that has the id of the client
-    """
-    def get_my_winners(self):
-        my_winners = []
-
-        for winner in self.winners:
-            if winner.agency == self.client_id:
-                my_winners.append(winner)
-        return my_winners
-       
-
+        # Because of how the Manager dict works, i need to assign
+        # the different lists that are in bets_per_clients dictionary
+        # for them to be shared. Appending to the list inside the shared 
+        # dict does not update the shared dictionary
+        for cli_id, bets in bets_per_client.items():
+                self.winners[cli_id] = bets
     

@@ -14,11 +14,11 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self.agencias_terminaron = Value('i', 0) #shared vae
+        self.agencias_terminaron = Value('i', 0) #shared value
         self.file_lock = Lock()  #shared lock for storing bets
         self.manager = Manager()
-        self.winners = self.manager.list() #shared list
-        self.sorteo_realizado =  Value('i', 0) #used as a bool
+        self.winners = self.manager.dict() #shared dict
+        self.sorteo_realizado =  Value('i', 0) #shared value used as a bool
         self._got_close_signal = False
         self._clients_handles = []
         self.clients = []
@@ -64,7 +64,7 @@ class Server:
         if cli_id is None:
             protocol.close()
             return
-        client_handler = ClientHandler(protocol, int(cli_id), self.file_lock, self.agencias_terminaron, self.winners, self.sorteo_realizado)
+        client_handler = ClientHandler(protocol, cli_id, self.file_lock, self.agencias_terminaron, self.winners, self.sorteo_realizado)
         self.clients.append(client_handler) #save the client for closing sockets
         p = Process(target=client_handler.run, args=())
         p.start()
@@ -89,13 +89,13 @@ class Server:
                 logging.critical(f"action: accept_connections | result: fail | error: {e}")
         
     def sigterm_handler(self, signal, frame):
-        logging.debug("Server socket closed")
+        logging.info("Server socket closed")
         self._got_close_signal = True
         self._server_socket.close()
-        logging.debug("Closing handlers sockets")
+        logging.info("Closing handlers sockets")
         for client in self.clients:
             client.stop()
-        logging.debug("Joining process handles")
+        logging.info("Joining process handles")
         for handle in self._clients_handles:
             handle.join()
             

@@ -66,13 +66,13 @@ def process_bet_message(client_id, msg):
 """
 Returns the bets that won the raffle for a client_id
 """
-def get_winners(client_id) -> list[Bet]:
-    winners = []
+def get_winners():
+
+    winners = {}
     bets = load_bets()
 
-    for bet in bets:
-        winner_is_from_agency = has_won(bet) and (bet.agency == int(client_id))
-        if winner_is_from_agency:
-            winners.append(bet)
-
+    for bet in bets: 
+        if has_won(bet):
+            id = str(bet.agency)
+            winners.setdefault(id, []).append(bet)
     return winners

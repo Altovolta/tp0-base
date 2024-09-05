@@ -42,12 +42,12 @@ class Server:
 
         #stop and join processes before closing the server
         if not self._got_close_signal:
-            logging.debug("Server socket closed")
+            logging.info("Server socket closed")
             self._server_socket.close()
-            logging.debug("Closing handlers sockets")
+            logging.info("Closing handlers sockets")
             for client in self.clients:
                 client.stop()
-            logging.debug("Joining process handles")
+            logging.info("Joining process handles")
             for handle in self._clients_handles:
                 handle.join()
             

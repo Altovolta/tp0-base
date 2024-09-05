@@ -51,7 +51,7 @@ class ClientHandler:
     Stops the client handler execution and closes the connection socket
     """
     def stop(self):
-        logging.debug(f"Closing connection for client {self.client_id}")
+        logging.info(f"Closing connection for client {self.client_id}")
         self.protocol.close()
 
     """
@@ -75,7 +75,7 @@ class ClientHandler:
     it obtains the raffle winners
     """
     def handle_all_bets_sent_message(self):
-        logging.debug(f"All bets from client {self.client_id} were received")
+        logging.info(f"All bets from client {self.client_id} were received")
         with self.agencias_terminaron.get_lock():
             self.agencias_terminaron.value += 1
             if self.agencias_terminaron.value < AMOUNT_OF_CLIENTS:

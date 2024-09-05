@@ -72,17 +72,17 @@ func (c *Client) StartClientLoop() {
 
 	go func() {
 		sig := <-sig_channel
-		log.Debugf("signal received | signal: %s", sig)
+		log.Infof("signal received | signal: %s", sig)
 		c.stop = true
 		c.conn.Close()
-		log.Debugf("Closing file and socket connection")
+		log.Infof("Closing file and socket connection")
 	}()
 
 	_, err := SendId(c.conn, c.config.ID)
 	if err != nil {
 		process_error(err, c.stop, c.config.ID)
 		c.conn.Close()
-		log.Debugf("Closing socket connection")
+		log.Infof("Closing socket connection")
 		return
 	}
 
@@ -101,7 +101,7 @@ func (c *Client) StartClientLoop() {
 		if err != nil {
 			process_error(err, c.stop, c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 
@@ -109,7 +109,7 @@ func (c *Client) StartClientLoop() {
 		if err != nil {
 			process_error(err, c.stop, c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
@@ -127,7 +127,7 @@ func (c *Client) StartClientLoop() {
 			if err != nil {
 				process_error(err, c.stop, c.config.ID)
 				c.conn.Close()
-				log.Debugf("Closing socket connection")
+				log.Infof("Closing socket connection")
 				return
 			}
 			break
@@ -137,7 +137,7 @@ func (c *Client) StartClientLoop() {
 		time.Sleep(c.config.LoopPeriod)
 
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	log.Debugf("action: loop_finished | result: success | client_id: %v", c.config.ID)
 	c.GetWinners()
 }
 
@@ -151,22 +151,22 @@ func (c *Client) GetWinners() {
 		if err != nil {
 			process_error(err, c.stop, c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 		switch msg {
 		case RAFFLE_PENDING:
-			log.Debugf("Raffle not ready")
+			log.Infof("Raffle not ready")
 			time.Sleep(c.config.LoopPeriod)
 		case RAFFLE_READY:
 			cant_ganadores, err := ObtainWinnersAmount(reader)
 			if err != nil {
 				log.Errorf("Error while receiving winners")
 				c.conn.Close()
-				log.Debugf("Closing socket connection")
+				log.Infof("Closing socket connection")
 				return
 			}
-			log.Debugf("action: consulta_ganadores | result: success | cant_ganadores: %v", cant_ganadores)
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", cant_ganadores)
 			c.conn.Close()
 			return
 		}

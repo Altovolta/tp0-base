@@ -205,6 +205,7 @@ Luego, cada apuesta tiene el siguiente formato:
 | largo_nombre (2B) | nombre (23B) | largo_apellido (2B) | apellido (10B) | documento (8B) | fecha_nacimiento (10B) | numero (4B) |
 
 El servidor va a responder con "OK\n" para confirmar que recibió un batch de forma correcta.
+
 En caso de que haya un error al recibir un batch, el servidor va a responder con "E\n" y cierra la conexión con el cliente
 
 Cuando el cliente consulta la lista de ganadores, si todavía no se hizo el sorteo, el servidor responderá con "N\n", por lo que el cliente tendrá que volver a consultar más tarde

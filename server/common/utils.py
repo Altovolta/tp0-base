@@ -3,6 +3,9 @@ import datetime
 import time
 
 
+
+import logging
+
 """ Bets storage location. """
 STORAGE_FILEPATH = "./bets.csv"
 """ Simulated winner number in the lottery contest. """
@@ -62,16 +65,15 @@ def process_bet_message(client_id, msg):
     numero = msg[55:]
     return Bet(client_id, name, apellido, dni, fecha_nac, numero)
 
-def get_winners(client_id) -> list[Bet]:
+def get_winners():
     """
     Returns the bets that won the raffle for a client_id
     """
-    winners = []
+    winners = {}
     bets = load_bets()
 
-    for bet in bets:
-        winner_is_from_agency = has_won(bet) and (bet.agency == int(client_id))
-        if winner_is_from_agency:
-            winners.append(bet)
-
+    for bet in bets: 
+        if has_won(bet):
+            id = str(bet.agency)
+            winners.setdefault(id, []).append(bet)
     return winners

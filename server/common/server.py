@@ -15,6 +15,7 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self.agencias_terminaron = 0
         self.sorteo_realizado = False
+        self.winners = {} #cambiar el 5
         self._got_close_signal = False
         signal.signal(signal.SIGTERM, self.sigterm_handler)
 
@@ -115,6 +116,7 @@ class Server:
         self.agencias_terminaron += 1
         if self.agencias_terminaron == AMOUNT_OF_CLIENTS:
             self.sorteo_realizado = True
+            self.winners = utils.get_winners()
             logging.info("action: sorteo | result: success")
 
    
@@ -126,7 +128,7 @@ class Server:
         if not self.sorteo_realizado:
             protocol.send_raffle_pending()
             return False
-        
-        winners = utils.get_winners(client_id)
+
+        winners = self.winners.get(client_id, [])
         protocol.send_winners(winners)
         return True

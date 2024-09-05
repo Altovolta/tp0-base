@@ -14,10 +14,10 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self.agencias_terminaron = Value('i', 0)
-        self.file_lock = Lock() 
+        self.agencias_terminaron = Value('i', 0) #shared vae
+        self.file_lock = Lock()  #shared lock for storing bets
         self.manager = Manager()
-        self.winners = self.manager.list()
+        self.winners = self.manager.list() #shared list
         self.sorteo_realizado =  Value('i', 0) #used as a bool
         self._got_close_signal = False
         self._clients_handles = []
@@ -87,13 +87,6 @@ class Server:
         except OSError as e:
             if not self._got_close_signal:
                 logging.critical(f"action: accept_connections | result: fail | error: {e}")
-
-    
-    def client_finished(self):
-        self.agencias_terminaron += 1
-        if self.agencias_terminaron == AMOUNT_OF_CLIENTS:
-            self.sorteo_realizado = True
-            logging.info("action: sorteo | result: success")
         
     def sigterm_handler(self, signal, frame):
         logging.debug("Server socket closed")

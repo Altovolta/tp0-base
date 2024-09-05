@@ -178,3 +178,18 @@ Cada ejercicio deberá resolverse en una rama independiente con nombres siguiend
 Puden obtener un listado del último commit de cada rama ejecutando `git ls-remote`.
 
 Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+
+# Ejecucion del ejercicio
+
+## Ejercicio 1
+
+Para ejecutar el generador, se debe ejecutar el siguiente ccomando:
+
+```bash
+./generar-compose.sh ${NOMBRE DEL ARCHIVO} ${CANTIDAD DE CLIENTES}
+```
+
+Esto lo que hace es generar un docker compose en el archivo indicado y con la cantidad de clientes que se especifique.
+
+Por debajo, este script ejecuta un script the python que permite generar el contenido del archivo

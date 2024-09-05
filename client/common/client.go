@@ -74,17 +74,17 @@ func (c *Client) StartClientLoop() {
 
 	go func() {
 		sig := <-sig_channel
-		log.Debugf("signal received | signal: %s", sig)
+		log.Infof("signal received | signal: %s", sig)
 		c.stop = true
 		c.conn.Close()
-		log.Debugf("Closing file and socket connection")
+		log.Infof("Closing file and socket connection")
 	}()
 
 	_, err := SendId(c.conn, c.config.ID)
 	if err != nil {
 		process_error(err, c.stop, c.config.ID)
 		c.conn.Close()
-		log.Debugf("Closing socket connection")
+		log.Infof("Closing socket connection")
 		return
 	}
 
@@ -94,14 +94,14 @@ func (c *Client) StartClientLoop() {
 		if err != nil {
 			log.Criticalf("Couldn get batch. Error:  %v", err)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 		_, err = SendBetsBatch(c.conn, bets)
 		if err != nil {
 			process_error(err, c.stop, c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 
@@ -109,7 +109,7 @@ func (c *Client) StartClientLoop() {
 		if err != nil {
 			process_error(err, c.stop, c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
@@ -125,12 +125,10 @@ func (c *Client) StartClientLoop() {
 			if err != nil {
 				process_error(err, c.stop, c.config.ID)
 				c.conn.Close()
-				log.Debugf("Closing socket connection")
+				log.Infof("Closing socket connection")
 				return
 			}
 			break
-			// SendAllBetsSent(c)
-			// break
 		}
 
 		// Wait a time between sending one message and the next one

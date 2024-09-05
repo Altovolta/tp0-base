@@ -58,7 +58,7 @@ class Server:
                     if self.handle_batch_message(protocol, client_id) is None:
                         break
                 elif msg == ALL_BETS_SENT_CODE:
-                    logging.debug(f"Client {client_id} has no more bets to send")
+                    logging.info(f"Client {client_id} has no more bets to send")
                     break
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
@@ -88,7 +88,7 @@ class Server:
             
         
     def sigterm_handler(self, signal, frame):
-        logging.debug("Server socket closed")
+        logging.info("Server socket closed")
         self._server_socket.close()
         self._got_close_signal = True
 

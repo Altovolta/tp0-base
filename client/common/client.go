@@ -72,17 +72,17 @@ func (c *Client) StartClientLoop() {
 
 	go func() {
 		sig := <-sig_channel
-		log.Debugf("signal received | signal: %s", sig)
+		log.Info("signal received | signal: %s", sig)
 		c.stop = true
 		c.conn.Close()
-		log.Debugf("Closing file and socket connection")
+		log.Infof("Closing file and socket connection")
 	}()
 
 	_, err := SendId(c.conn, c.config.ID)
 	if err != nil {
 		process_error(err, c.stop, c.config.ID)
 		c.conn.Close()
-		log.Debugf("Closing socket connection")
+		log.Infof("Closing socket connection")
 		return
 	}
 
@@ -95,14 +95,14 @@ func (c *Client) StartClientLoop() {
 		if err != nil {
 			log.Criticalf("Couldn get batch. Error:  %v", err)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 		_, err = SendBetsBatch(c.conn, bets)
 		if err != nil {
 			process_error(err, c.stop, c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 
@@ -110,7 +110,7 @@ func (c *Client) StartClientLoop() {
 		if err != nil {
 			process_error(err, c.stop, c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
@@ -120,7 +120,7 @@ func (c *Client) StartClientLoop() {
 		if msg != BATCH_RECEIVED_SUCCESS {
 			log.Errorf("action: send_batch | result: fail | client_id: %v", c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 
@@ -129,7 +129,7 @@ func (c *Client) StartClientLoop() {
 			if err != nil {
 				process_error(err, c.stop, c.config.ID)
 				c.conn.Close()
-				log.Debugf("Closing socket connection")
+				log.Infof("Closing socket connection")
 				return
 			}
 			break
@@ -139,7 +139,7 @@ func (c *Client) StartClientLoop() {
 		time.Sleep(c.config.LoopPeriod)
 
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	log.Debugf("action: loop_finished | result: success | client_id: %v", c.config.ID)
 	c.conn.Close()
 
 	c.GetWinners()
@@ -157,12 +157,12 @@ func (c *Client) GetWinners() {
 		if err != nil {
 			process_error(err, c.stop, c.config.ID)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 		switch msg {
 		case RAFFLE_PENDING:
-			log.Debugf("Raffle not ready")
+			log.Infof("Raffle not ready")
 			time.Sleep(c.config.LoopPeriod)
 			c.conn.Close()
 		case RAFFLE_READY:
@@ -170,13 +170,13 @@ func (c *Client) GetWinners() {
 			if err != nil {
 				log.Errorf("Error while receiving winners")
 				c.conn.Close()
-				log.Debugf("Closing socket connection")
+				log.Infof("Closing socket connection")
 				return
 			}
 
-			log.Debugf("action: consulta_ganadores | result: success | cant_ganadores: %v", cant_ganadores)
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", cant_ganadores)
 			c.conn.Close()
-			log.Debugf("Closing socket connection")
+			log.Infof("Closing socket connection")
 			return
 		}
 

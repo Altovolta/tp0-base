@@ -88,7 +88,7 @@ class Server:
                 logging.critical(f"action: accept_connections | result: fail | error: {e}")
         
     def sigterm_handler(self, signal, frame):
-        logging.debug("Server socket closed")
+        logging.info("Server socket closed")
         self._server_socket.close()
         self._got_close_signal = True
 

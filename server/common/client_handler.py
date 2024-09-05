@@ -2,18 +2,17 @@ import logging
 from . import utils
 from common.constants import *
 from common.server_protocol import *
-
+from multiprocessing import Queue
 
 class ClientHandler:
 
-    def __init__(self, protocol:ServerProtocol, client_id, lock, agencias_terminaron, winners, sorteo_realizado):
+    def __init__(self, protocol:ServerProtocol, client_id, lock, queue_to_server:Queue, queue_from_server:Queue):
         self.protocol = protocol 
         self.bets = []
         self.client_id = client_id
         self.file_lock = lock #shared lock
-        self.agencias_terminaron = agencias_terminaron #shared value
-        self.winners = winners #shared dict
-        self.sorteo_realizado = sorteo_realizado #shared value
+        self.queue_to_server = queue_to_server
+        self.queue_from_server = queue_from_server
 
     def run(self):
 
@@ -53,6 +52,7 @@ class ClientHandler:
     def stop(self):
         logging.info(f"Closing connection for client {self.client_id}")
         self.protocol.close()
+        self.queue_to_server.put((self.client_id, PROTOCOL_CLOSED))
 
     """
     Handler that receives the batch of bets and stores them
@@ -76,45 +76,22 @@ class ClientHandler:
     """
     def handle_all_bets_sent_message(self):
         logging.info(f"All bets from client {self.client_id} were received")
-        with self.agencias_terminaron.get_lock():
-            self.agencias_terminaron.value += 1
-            if self.agencias_terminaron.value < AMOUNT_OF_CLIENTS:
-                return
-        # if its the last one to send all the bets, it loads the winners
-        self.get_winners()
-        with self.sorteo_realizado.get_lock():
-            self.sorteo_realizado.value = True
-        
-        logging.info("action: sorteo | result: success")
-
+        self.queue_to_server.put((self.client_id, CLIENT_FINISHED))
 
     """
     Handles the ASK_FOR_WINNERS command. If the draw was made, it send the 
     winners of an agency to the client
     """
     def handle_winners_request_message(self):
-        with self.sorteo_realizado.get_lock():
-            if self.sorteo_realizado.value == False:
-                self.protocol.send_raffle_pending()
-                return False
 
-        client_winners = self.winners.get(self.client_id, [])
-        if self.protocol.send_winners(client_winners) == 0:
+        self.queue_to_server.put((self.client_id, CONSULT_WINNERS))
+
+        winners = self.queue_from_server.get()
+        if winners is None:
+            self.protocol.send_raffle_pending()
+            return False #no se hizo el sorteo
+        
+        if self.protocol.send_winners(winners) == 0:
             return None
         return True
-    
-    """
-    Gets the winners from the storage and its saves it in self.winners array
-    """
-    def get_winners(self):
-        bets_per_client = {}
-        with self.file_lock:
-           bets_per_client = utils.get_winners()
-
-        # Because of how the Manager dict works, i need to assign
-        # the different lists that are in bets_per_clients dictionary
-        # for them to be shared. Appending to the list inside the shared 
-        # dict does not update the shared dictionary
-        for cli_id, bets in bets_per_client.items():
-                self.winners[cli_id] = bets
     

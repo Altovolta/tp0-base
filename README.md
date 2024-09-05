@@ -220,9 +220,8 @@ Una vez envía todos los ganadores a una agencia, envía el mensaje "FIN\n" indi
 
 ## Herramientas de sincronización
 
-Los mecanismos de sincronización que use para este ejercicio fueron los locks:
+Los mecanismos de sincronización que use para este ejercicio fueron:
 
-- Un lock para cuando se almacenan o leen las apuestas desde el archivo. Esto lo que permite es que no haya race conditions al tener que guardar u obtener las distintas apuestas.
-- Para el caso de variables compartidas, decicdí usar un Value ya que me permite usar lock y compartir variables al mismo tiempo. Des este tipo hay 2, una que se encarga de contar la cantidad de agencias que ya enviaron todos sus apuestas y otra que permite saber si ya se realizó el sorteo o no. 
-Estas, se usan con el objetivo de poder saber cuando realizar el sorteo y, además, para indicarle a los distintos procesos que ya se hizo el sorteo y estos puedan enviarle los ganadores a los distintos clientes
-- Por último, se uso una lista compartida, que se encarga de guardar todas las apuestas que ganaron con el fin de que los distintos procesos puedan usarla para obtener y enviarle los ganadores a las distintas agencias
+- Un lock para manejar el acceso a la hora de almacenar las apuestas
+- Una cola para que el cliente se comunique con el servidor, indicando si un cliente mando todas las apuestas
+- Una cola para que el servidor le responda al cliente y le mande los ganadores en caso de que se haga el sorteo

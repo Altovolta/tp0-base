@@ -145,6 +145,7 @@ func (c *Client) StartClientLoop() {
 	c.GetWinners()
 }
 
+// Ask for the winners to the server.
 func (c *Client) GetWinners() {
 
 	for !c.stop {

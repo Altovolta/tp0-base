@@ -179,7 +179,7 @@ Puden obtener un listado del último commit de cada rama ejecutando `git ls-remo
 
 Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
 
-# PEJERCICIO 7
+# EJERCICIO 7
 
 ## Protocolo
 
@@ -208,7 +208,7 @@ El servidor va a responder con "OK\n" para confirmar que recibió un batch de fo
 En caso de que haya un error al recibir un batch, el servidor va a responder con "E\n" y cierra la conexión con el cliente
 
 
-El cliente para poder consultar la lista de ganadores, debe enviar "{ID_cliente}3" al servidor. Si todavía no se hizo el sorteo, el servidor responderá con "N\n", por lo que el cliente volverá a consultar más tarde
+El cliente para poder consultar la lista de ganadores, debe enviar "{ID_cliente}3" al servidor, donde '3' es el tipo de mensaje. Si todavía no se hizo el sorteo, el servidor responderá con "N\n", por lo que el cliente volverá a consultar más tarde
 
 En el caso de que el servidor ya haya hecho el sorteo, este enviará "Y\n" y luego enviará los ganadores como:
 

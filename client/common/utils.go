@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+// Get batch size bets from a file. If there is an error, err is set.
+// It returns an array of bets.
 func get_bet_batch(fscanner *bufio.Scanner, batch_size int) ([]Bet, error) {
 	var bets []Bet
 	bets_loaded := 0
@@ -28,6 +30,7 @@ func get_bet_batch(fscanner *bufio.Scanner, batch_size int) ([]Bet, error) {
 	return bets, nil
 }
 
+// Handle errors when receiving messages from socket
 func process_error(err error, stop_signal bool, client_id string) {
 
 	if stop_signal {

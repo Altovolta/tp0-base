@@ -223,5 +223,7 @@ Una vez envía todos los ganadores a una agencia, envía el mensaje "FIN\n" indi
 Los mecanismos de sincronización que use para este ejercicio fueron:
 
 - Un lock para manejar el acceso a la hora de almacenar las apuestas
-- Una cola para que el cliente se comunique con el servidor, indicando si un cliente mando todas las apuestas
+- Una cola para que el cliente se comunique con el servidor, indicando si un cliente mando todas las apuestas o si el cliente quiere consultar los ganadores
 - Una cola para que el servidor le responda al cliente y le mande los ganadores en caso de que se haga el sorteo
+
+Una vez todos los ClientHandlers le avisan al servidor que los clientes terminaron de enviar todas sus apuestas, el servidor realiza el sorteo, y le envía a cada cliente una lista con las apuestas ganadores correspondientes.

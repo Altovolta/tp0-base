@@ -58,6 +58,13 @@ func (c *Client) createClientSocket() error {
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 
+	max_amount_of_bets_per_batch := MAX_BATCH_BYTE_SIZE / (BET_BYTE_SIZE + BATCH_HEADER_SIZE)
+	bets_per_batch := c.config.BatchSize
+	if bets_per_batch > max_amount_of_bets_per_batch {
+		bets_per_batch = max_amount_of_bets_per_batch
+		log.Infof("Since batch size was higher than 8kB, the batch size will be %v", bets_per_batch)
+	}
+
 	sig_channel := make(chan os.Signal, 1)
 	signal.Notify(sig_channel, syscall.SIGTERM)
 
@@ -91,7 +98,7 @@ func (c *Client) StartClientLoop() {
 
 	for {
 
-		bets, err := get_bet_batch(fscanner, c.config.BatchSize)
+		bets, err := get_bet_batch(fscanner, bets_per_batch)
 		if err != nil {
 			log.Criticalf("Couldn get batch. Error:  %v", err)
 			c.conn.Close()
@@ -122,7 +129,7 @@ func (c *Client) StartClientLoop() {
 			return
 		}
 
-		if len(bets) < c.config.BatchSize {
+		if len(bets) < bets_per_batch {
 			_, err := SendAllBetsSent(c.conn)
 			if err != nil {
 				process_error(err, c.stop, c.config.ID)
